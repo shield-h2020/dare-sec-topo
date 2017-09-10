@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<recipe-set minSeverity="1" maxSeverity="2" type="TCP flood"
+	xmlns="http://security.polito.it/shield/recipe" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://security.polito.it/shield/recipe ../xsd/recipe.xsd ">
+
+	<recipe>
+		<name>limit packets</name>
+		<action>limit</action>
+		<traffic-constraints>
+			<type>TCP</type>
+			<max-connections>20</max-connections>
+			<rate-limit>100/s</rate-limit>
+		</traffic-constraints>
+	</recipe>
+
+	<recipe>
+		<name>drop packets</name>
+		<action>drop</action>
+		<traffic-constraints>
+			<type>TCP</type>
+		</traffic-constraints>
+	</recipe>
+
+</recipe-set>

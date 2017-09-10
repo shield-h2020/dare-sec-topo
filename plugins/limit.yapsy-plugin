@@ -1,0 +1,11 @@
+[Core]
+Name = Limit action
+Module = limit
+Capabilities = filtering.basic, filtering.limit
+Action = limit
+Score = 100
+
+[Documentation]
+Description = The limit action plug-in.
+Version = 0.1
+Author = Daniele Canavese

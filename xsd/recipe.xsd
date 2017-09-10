@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2017 Politecnico di Torino
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ -->
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://security.polito.it/shield/recipe" xmlns:tns="http://security.polito.it/shield/recipe"
+	elementFormDefault="qualified">
+
+	<element name="recipe-set" type="tns:recipe-set">
+		<annotation>
+			<documentation>The root element. A recipe, that is a set of template HSPL policies.</documentation>
+		</annotation>
+	</element>
+
+	<complexType name="recipe-set">
+		<sequence>
+			<element name="recipe" type="tns:recipe" maxOccurs="unbounded" minOccurs="1" />
+		</sequence>
+		<attribute name="type" use="required">
+			<annotation>
+				<documentation>The attack type.</documentation>
+			</annotation>
+			<simpleType>
+				<restriction base="string">
+					<enumeration value="TCP flood" />
+					<enumeration value="UDP flood" />
+				</restriction>
+			</simpleType>
+		</attribute>
+		<attribute name="minSeverity" use="required" type="positiveInteger">
+			<annotation>
+				<documentation>The minimum attack severity.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="maxSeverity" use="required" type="positiveInteger">
+			<annotation>
+				<documentation>The maximum attack severity.</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+
+	<complexType name="recipe">
+		<annotation>
+			<documentation>A recipe.</documentation>
+		</annotation>
+		<sequence>
+			<element name="name" type="string" maxOccurs="1" minOccurs="1">
+				<annotation>
+					<documentation>A human readable name for the policy.</documentation>
+				</annotation>
+			</element>
+			<element name="subject" type="tns:agent" maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>The policy subjects, that is the protection targets. They can be IP addresses, ports or URLs.
+					</documentation>
+				</annotation>
+			</element>
+			<element name="action" type="tns:action" maxOccurs="1" minOccurs="1">
+				<annotation>
+					<documentation>The policy action.</documentation>
+				</annotation>
+			</element>
+			<element name="object" type="tns:agent" maxOccurs="unbounded" minOccurs="0">
+				<annotation>
+					<documentation>The policy objects, that is the attackers. They can be IP addresses, ports or URLs.</documentation>
+				</annotation>
+			</element>
+			<element name="traffic-constraints" type="tns:traffic-constraints" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>A set of optional traffic constraints to aid the refinement.</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+
+	<simpleType name="agent">
+		<annotation>
+			<documentation>The type of a policy subject or object.</documentation>
+		</annotation>
+		<restriction base="string">
+			<pattern value="((\d+\.\d+\.\d+\.\d+(-\d+\.\d+\.\d+\.\d+)?)|(\d+\.\d+\.\d+\.\d+/\d+)|\*|any)(:(\*|any|\d+(-\d+)?))?" />
+			<pattern value="(http|https)://.+(:(\*|\d+(-\d+)?))?"></pattern>
+		</restriction>
+	</simpleType>
+
+	<simpleType name="action">
+		<annotation>
+			<documentation>The type of a policy action.</documentation>
+		</annotation>
+		<restriction base="string">
+			<enumeration value="limit">
+				<annotation>
+					<documentation>Limit the traffic.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="drop">
+				<annotation>
+					<documentation>Discard all the traffic.</documentation>
+				</annotation>
+			</enumeration>
+		</restriction>
+	</simpleType>
+
+	<complexType name="traffic-constraints">
+		<annotation>
+			<documentation>The type of a policy traffic constraints.</documentation>
+		</annotation>
+		<sequence>
+			<element name="type" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>The type of traffic.</documentation>
+				</annotation>
+				<simpleType>
+					<restriction base="string">
+						<enumeration value="TCP">
+							<annotation>
+								<documentation>The TCP protocol.</documentation>
+							</annotation>
+						</enumeration>
+						<enumeration value="UDP">
+							<annotation>
+								<documentation>The UDP protocol.</documentation>
+							</annotation>
+						</enumeration>
+					</restriction>
+				</simpleType>
+			</element>
+			<element name="max-connections" type="positiveInteger" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>The maximum number of connections allowed per host for a limit policy. Only useful for stateful connections (e.g. TCP).					</documentation>
+				</annotation>
+			</element>
+			<element name="rate-limit" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>
+						The rate limit for a limit policy. It is a number of allowed packets per unit of time (seconds, minutes, hours or days).
+					</documentation>
+				</annotation>
+				<simpleType>
+					<restriction base="string">
+						<pattern value="\d+/(second|minute|hour|day|s|m|h|d)" />
+					</restriction>
+				</simpleType>
+			</element>
+		</sequence>
+	</complexType>
+
+</schema>
