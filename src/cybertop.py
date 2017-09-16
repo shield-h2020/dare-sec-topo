@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pyinotify
 
 """
 The CyberSecurity Topologies related stuff.
@@ -27,8 +28,10 @@ from parsing import Parser
 from recipes import RecipesReasoner
 from hspl import HSPLReasoner
 from mspl import MSPLReasoner
+import pika
+from lxml import etree
 
-class CyberTop(object):
+class CyberTop(pyinotify.ProcessEvent):
     """
     The CyberSecurity Topologies main class.
     """
@@ -44,14 +47,7 @@ class CyberTop(object):
         logging.basicConfig(filename  = "cybertop.log", level = logging.DEBUG, format = "%(asctime)-25s %(levelname)-8s %(message)s")
         logging.getLogger("yapsy").setLevel(logging.WARNING)
         self.logger = logging.getLogger("cybertop")
-        defaults = {}
-        defaults["recipeDirectory"] = "recipes"
-        defaults["pluginsDirectory"] = "plugins"
-        defaults["landscapeSchema"] = "xsd/landscape.xsd"
-        defaults["recipeSchema"] = "xsd/recipe.xsd"
-        defaults["hsplSchema"] = "xsd/hspl.xsd"
-        defaults["msplSchema"] = "xsd/mspl.xsd"
-        self.configParser = SafeConfigParser(defaults)
+        self.configParser = SafeConfigParser()
         if len(self.configParser.read(self.CONFIGURATION_FILES)) > 0:
             self.logger.debug("Configuration file read.")
         else:
@@ -89,3 +85,28 @@ class CyberTop(object):
             return None
         else:
             return [hsplSet, msplSet]
+
+    def start(self, landscapeFileName):
+        """
+        Starts the CyberTop daemon.
+        @param landscapeFileName: the name of the landscape file to parse.
+        """
+        parameters = pika.ConnectionParameters(self.configParser.get("global", "dashboardURL"))
+        connection = pika.BlockingConnection(parameters)
+        self.channel = connection.channel()
+        
+        wm = pyinotify.WatchManager()
+        notifier = pyinotify.Notifier(wm, self)
+        wm.add_watch(self.configParser.get("global", "watchedDirectory"), pyinotify.IN_CREATE)
+        self.landscapeFileName = landscapeFileName # Uglyyyy!
+        notifier.loop(daemonize = False, pid_file = "/tmp/cybertop.pid")
+
+    def process_IN_CREATE(self, event):
+        try:
+            [hsplSet, msplSet] = self.getMSPLs(event.pathname, self.landscapeFileName)
+            hsplString = etree.tostring(hsplSet, pretty_print = True).decode()
+            msplString = etree.tostring(msplSet, pretty_print = True).decode()
+            self.channel.basic_publish(self.configParser.get("global", "rabbitExchange"), "HSPLs", hsplString)
+            self.channel.basic_publish(self.configParser.get("global", "rabbitExchange"), "MSPLs", msplString)
+        except:
+            pass
