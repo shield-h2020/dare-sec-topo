@@ -91,22 +91,25 @@ class CyberTop(pyinotify.ProcessEvent):
         Starts the CyberTop daemon.
         @param landscapeFileName: the name of the landscape file to parse.
         """
-        parameters = pika.ConnectionParameters(self.configParser.get("global", "dashboardURL"))
-        connection = pika.BlockingConnection(parameters)
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host = self.configParser.get("global", "dashboardURL")))
         self.channel = connection.channel()
+        self.channel.queue_declare(queue = self.configParser.get("global", "dashboardQueue"))
         
         wm = pyinotify.WatchManager()
         notifier = pyinotify.Notifier(wm, self)
         wm.add_watch(self.configParser.get("global", "watchedDirectory"), pyinotify.IN_CREATE)
         self.landscapeFileName = landscapeFileName # Uglyyyy!
-        notifier.loop(daemonize = False, pid_file = "/tmp/cybertop.pid")
+        notifier.loop(daemonize = True, pid_file = "/tmp/cybertop.pid")
 
     def process_IN_CREATE(self, event):
         try:
+            print("a")
             [hsplSet, msplSet] = self.getMSPLs(event.pathname, self.landscapeFileName)
             hsplString = etree.tostring(hsplSet, pretty_print = True).decode()
             msplString = etree.tostring(msplSet, pretty_print = True).decode()
-            self.channel.basic_publish(self.configParser.get("global", "rabbitExchange"), "HSPLs", hsplString)
-            self.channel.basic_publish(self.configParser.get("global", "rabbitExchange"), "MSPLs", msplString)
+            queue = self.configParser.get("global", "dashboardQueue")
+            self.channel.basic_publish(exchange = "", routing_key = queue, body = hsplString)
+            self.channel.basic_publish(exchange = "", routing_key = queue, body = msplString)
         except:
+            print("no!")
             pass

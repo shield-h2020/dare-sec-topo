@@ -22,17 +22,15 @@ The CyberSecurity Topologies daemon.
 
 from sys import argv
 from sys import stderr
-from sys import stdout
 
 if len(argv) == 1:
-    print >> stderr, "No arguments. Type", argv[0], "--help for help."
+    print("No arguments. Type", argv[0], "--help for help.", file = stderr)
 elif len(argv) == 2:
     if argv[1] == "--help":
-        print >> stdout, "Syntax:", argv[0], "<command>"
-        print >> stdout, "Available commands:"
-        print >> stdout, "  --help               displays this help screen"
-        print >> stdout, "  --start <landscape>  starts the daemon using the specified landscape file"
-        print >> stdout, "  --stop               stops the daemon"
+        print("Syntax:", argv[0], "<command>")
+        print("Available commands:")
+        print("  --help               displays this help screen")
+        print("  --start <landscape>  starts the daemon using the specified landscape file")
     else:
         print >> stderr, "The command", argv[1], "is unknown."
 elif len(argv) == 3:
@@ -40,4 +38,4 @@ elif len(argv) == 3:
         cybertop = CyberTop()
         cybertop.start(argv[2])
 else:
-    print >> stderr, "Too many arguments."
+    print("Too many arguments.", file = stderr)
