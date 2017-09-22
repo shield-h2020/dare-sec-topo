@@ -25,6 +25,7 @@ from dateutil import parser
 import ipaddress
 from lxml import etree
 from attacks import Attack, AttackEvent
+import os
 
 class Parser(object):
     """
@@ -56,7 +57,7 @@ class Parser(object):
             raise IOError("The file '%s' is not a regular file." % fileName)
         
         # Second: checks the file name format.
-        match = re.match("^([1234])-(.+)?-(\d+)\.csv$", fileName)
+        match = re.match("^([1234])-(.+)?-(\d+)\.csv$", os.path.basename(fileName))
         if not match:
             self.logger.critical("The file '%s' has an invalid name.", fileName)
             raise IOError("The file '%s' has an invalid name." % fileName)
