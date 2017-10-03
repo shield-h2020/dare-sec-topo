@@ -54,7 +54,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        'cybertop': ['xsd/*.xsd','plugins/*.yapsy-plugin','recipes/*.xml'],
+        'cybertop': ['xsd/*.xsd','plugin_impls/*.yapsy-plugin','recipes/*.xml'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may
