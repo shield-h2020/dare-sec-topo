@@ -13,6 +13,13 @@ This project consists of the following files/folders:
 - `LICENSE` contains more information about the project license;
 - `README.md` is the file that you are currently reading.
 
+## Installation ##
+
+You can install the `cybertop` module by executing:
+```
+$ python setup.py install
+```
+
 ## Usage ##
 
 The main class that you should use is `cybertop.CyberTop`.
