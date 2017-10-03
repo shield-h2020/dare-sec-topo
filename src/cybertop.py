@@ -21,7 +21,7 @@ The CyberSecurity Topologies related stuff.
 
 import logging
 import os
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
 from plugins import ActionPlugin
 from parsing import Parser
@@ -38,7 +38,7 @@ class CyberTop(pyinotify.ProcessEvent):
     """
     
     # The configuration file.
-    CONFIGURATION_FILES = ["cybertop.cfg", "/etc/cybertop.cfg", os.path.expanduser('~/.cybertop.cfg')]
+    CONFIGURATION_FILES = ["./cybertop.cfg", "/etc/cybertop.cfg", os.path.expanduser('~/.cybertop.cfg')]
     # The log file.
     LOG_FILE = "cybertop.log"
     # The pid file.
@@ -46,7 +46,7 @@ class CyberTop(pyinotify.ProcessEvent):
     # The version number.
     VERSION = "0.2"
 
-    def __init__(self, configurationFileName = "None"):
+    def __init__(self, configurationFileName = None):
         """
         Constructor.
         @param configurationFileName: the name of the configuration file to parse.
@@ -57,7 +57,7 @@ class CyberTop(pyinotify.ProcessEvent):
         self.logger = logging.getLogger("cybertop")
         
         # Configures the configuration file parser.
-        self.configParser = SafeConfigParser()
+        self.configParser = ConfigParser()
         if configurationFileName is None:
             c = self.configParser.read(self.CONFIGURATION_FILES)
         else:
