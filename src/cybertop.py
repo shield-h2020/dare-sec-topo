@@ -30,6 +30,7 @@ from hspl import HSPLReasoner
 from mspl import MSPLReasoner
 import pika
 from lxml import etree
+import signal
 
 class CyberTop(pyinotify.ProcessEvent):
     """
@@ -38,20 +39,35 @@ class CyberTop(pyinotify.ProcessEvent):
     
     # The configuration file.
     CONFIGURATION_FILES = ["cybertop.cfg", "/etc/cybertop.cfg", os.path.expanduser('~/.cybertop.cfg')]
+    # The log file.
+    LOG_FILE = "cybertop.log"
+    # The pid file.
+    PID_FILE = "/tmp/cybertop.pid"
+    # The version number.
+    VERSION = "0.2"
 
-    def __init__(self):
+    def __init__(self, configurationFileName = "None"):
         """
         Constructor.
+        @param configurationFileName: the name of the configuration file to parse.
         """
         # Configures the logging.
-        logging.basicConfig(filename  = "cybertop.log", level = logging.DEBUG, format = "%(asctime)-25s %(levelname)-8s %(message)s")
+        logging.basicConfig(filename  = self.LOG_FILE, level = logging.DEBUG, format = "%(asctime)-25s %(levelname)-8s %(message)s")
         logging.getLogger("yapsy").setLevel(logging.WARNING)
         self.logger = logging.getLogger("cybertop")
+        
+        # Configures the configuration file parser.
         self.configParser = SafeConfigParser()
-        if len(self.configParser.read(self.CONFIGURATION_FILES)) > 0:
-            self.logger.debug("Configuration file read.")
+        if configurationFileName is None:
+            c = self.configParser.read(self.CONFIGURATION_FILES)
+        else:
+            c = self.configParser.read(configurationFileName)
+        if len(c) > 0:
+            self.logger.debug("Configuration file %s read.", c[0])
         else:
             self.logger.warning("Configuration file not read.")
+
+        # Configures the plug-ins.
         self.pluginManager = PluginManager()
         self.pluginManager.setPluginPlaces([self.configParser.get("global", "pluginsDirectory")])
         self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin});
@@ -61,6 +77,7 @@ class CyberTop(pyinotify.ProcessEvent):
             self.logger.debug("Found %d plug-ins.", pluginsCount)
         else:
             self.logger.debug("Found %d plug-in.", pluginsCount)
+        # Loads all the sub-modules.
         self.parser = Parser(self.configParser)
         self.recipesReasoner = RecipesReasoner(self.configParser, self.pluginManager)
         self.hsplReasoner = HSPLReasoner(self.configParser, self.pluginManager)
@@ -86,30 +103,59 @@ class CyberTop(pyinotify.ProcessEvent):
         else:
             return [hsplSet, msplSet]
 
-    def start(self, landscapeFileName):
+    def start(self):
         """
         Starts the CyberTop daemon.
-        @param landscapeFileName: the name of the landscape file to parse.
-        """
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host = self.configParser.get("global", "dashboardURL")))
-        self.channel = connection.channel()
-        self.channel.queue_declare(queue = self.configParser.get("global", "dashboardQueue"))
+        """        
+        if (self.configParser.has_option("global", "dashboardURL") and
+            self.configParser.has_option("global", "dashboardQueue") and
+            self.configParser.has_option("global", "dashboardAttempts") and
+            self.configParser.has_option("global", "dashboardRetryDelay")):
+            host = self.configParser.get("global", "dashboardURL")
+            connectionAttempts = self.configParser.get("global", "dashboardAttempts")
+            retryDelay = self.configParser.get("global", "dashboardRetryDelay")
+            connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host = host,
+                connection_attempts = connectionAttempts,
+                retry_delay = retryDelay))
+            self.channel = connection.channel()
+            self.channel.queue_declare(queue = self.configParser.get("global", "dashboardQueue"))
+            self.logger.info("Connected to the dashboard.")
+        else:
+            self.channel = None
         
         wm = pyinotify.WatchManager()
         notifier = pyinotify.Notifier(wm, self)
-        wm.add_watch(self.configParser.get("global", "watchedDirectory"), pyinotify.IN_CREATE)
-        self.landscapeFileName = landscapeFileName # Uglyyyy!
-        notifier.loop(daemonize = True, pid_file = "/tmp/cybertop.pid")
+        wm.add_watch(self.configParser.get("global", "watchedDirectory"), pyinotify.IN_CREATE, rec = True, auto_add = True)
+        notifier.loop()#(daemonize = True, pid_file = self.PID_FILE)
+
+    def stop(self):
+        """
+        Stops the CyberTop daemon.
+        """
+        if os.path.isfile(self.PID_FILE): 
+            with open(self.PID_FILE) as d:
+                pid = int(d.read())
+                os.kill(pid, signal.SIGTERM)
+                os.remove(self.PID_FILE)
+        else:
+            print("No daemon running.")
 
     def process_IN_CREATE(self, event):
         try:
-            print("a")
-            [hsplSet, msplSet] = self.getMSPLs(event.pathname, self.landscapeFileName)
+            [hsplSet, msplSet] = self.getMSPLs(event.pathname, self.configParser.get("global", "landscapeFile"))
             hsplString = etree.tostring(hsplSet, pretty_print = True).decode()
             msplString = etree.tostring(msplSet, pretty_print = True).decode()
-            queue = self.configParser.get("global", "dashboardQueue")
-            self.channel.basic_publish(exchange = "", routing_key = queue, body = hsplString)
-            self.channel.basic_publish(exchange = "", routing_key = queue, body = msplString)
+            message = hsplString + msplString
+            
+            # Sends everything to RabbitMQ.
+            if self.channel is not None:
+                queue = self.configParser.get("global", "dashboardQueue")
+                self.channel.basic_publish(exchange = "", routing_key = queue, body = message)
+            
+            # Appends everything to the dashboard dump file.
+            if self.configParser.has_option("global", "dashboardFile"):
+                with open(self.configParser.get("global", "dashboardFile"), "a") as f:
+                    f.write(message)
         except:
-            print("no!")
             pass

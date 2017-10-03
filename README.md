@@ -1,4 +1,4 @@
-# CyberSecurity Topologies v0.1 #
+# CyberSecurity Topologies v0.2 #
 
 Welcome to the DARE's CyberSecurity Topologies tool.
 
@@ -20,3 +20,5 @@ It will read the configuration from a file named `cybertop.cfg` (you can look at
 It has a method called `getMSPLs()` that receives in input the path of a DARE CSV attack file and will return the XMLs of the HSPLs and MSPLS.
 
 Each operation is logged into a file named `cybertop.log`.
+
+You can also use the tool as a daemon using the `daemon.py` script. It will listen when a file is created into a directory and reacts accordingly, sending the results to the dashboard. Everything is configurable through the usual configuration file `cybertop.cfg`.
