@@ -44,7 +44,7 @@ class MSPLReasoner(object):
         self.logger = logging.getLogger("MSPL-reasoner")
         self.configParser = configParser
         self.pluginManager = pluginManager
-        self.logger.debug("MSPL reasoner initialized.")
+        self.logger.debug("MSPLs reasoner initialized.")
     
     def getMSPLs(self, hsplSet, landscape):
         """

@@ -42,7 +42,7 @@ class HSPLReasoner(object):
         self.logger = logging.getLogger("HSPL-reasoner")
         self.configParser = configParser
         self.pluginManager = pluginManager
-        self.logger.debug("HSPL reasoner initialized.")
+        self.logger.debug("HSPLs reasoner initialized.")
         
     def getHSPLs(self, attack, recipe, landscape):
         """

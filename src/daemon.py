@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from cybertop import CyberTop
+from sys import stderr
+import argparse
 
 """
 The CyberSecurity Topologies daemon.
@@ -20,22 +22,24 @@ The CyberSecurity Topologies daemon.
 @author: Daniele Canavese
 """
 
-from sys import argv
-from sys import stderr
+parser = argparse.ArgumentParser(description = "Manages the CyberSecurity Topologies daemon.")
+parser.add_argument("--version", action = "version", version = "CyberSecurity Topologies v%s" % CyberTop.VERSION)
+parser.add_argument("--configuration", type = argparse.FileType("r"), help = "specifies the configuration file")
+parser.add_argument("--start", action = "store_true", help = "starts the daemon")
+parser.add_argument("--stop", action = "store_true", help = "stops the daemon")
 
-if len(argv) == 1:
-    print("No arguments. Type", argv[0], "--help for help.", file = stderr)
-elif len(argv) == 2:
-    if argv[1] == "--help":
-        print("Syntax:", argv[0], "<command>")
-        print("Available commands:")
-        print("  --help               displays this help screen")
-        print("  --start <landscape>  starts the daemon using the specified landscape file")
-    else:
-        print >> stderr, "The command", argv[1], "is unknown."
-elif len(argv) == 3:
-    if argv[1] == "--start":
-        cybertop = CyberTop()
-        cybertop.start(argv[2])
+args = parser.parse_args()
+
+if args.configuration is None:
+    configuration = None
 else:
-    print("Too many arguments.", file = stderr)
+    configuration = args.configuration.name
+
+if args.start:
+        cybertop = CyberTop(configuration)
+        cybertop.start()
+elif args.stop:
+        cybertop = CyberTop(configuration)
+        cybertop.stop()
+else:
+    print("No action specified", file = stderr)
