@@ -21,7 +21,7 @@ Basic tests for the CyberTop class.
 import sys
 sys.path.append("../src")
 
-from cybertop import CyberTop
+from cybertop.cybertop import CyberTop
 import unittest
 
 class BasicTest(unittest.TestCase):
