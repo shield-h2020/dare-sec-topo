@@ -28,7 +28,7 @@ class LimitPlugin(ActionPlugin):
     # The fall-back value for the TCP max connections.
     MAX_CONNECTIONS = 20
     # The fall-back value for the TCP rate limit.
-    RATE_LIMIT = "100/s"
+    RATE_LIMIT = "100kbit/s"
     
     def configureITResource(self, itResource, hsplSet):
         """
