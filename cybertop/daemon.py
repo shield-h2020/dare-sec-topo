@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cybertop import CyberTop
+from cybertop.cybertop import CyberTop
 from sys import stderr
 import argparse
 

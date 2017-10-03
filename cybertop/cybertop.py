@@ -11,23 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import pyinotify
 
 """
 The CyberSecurity Topologies related stuff.
 
 @author: Daniele Canavese
 """
-
+import pyinotify
 import logging
 import os
 from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
-from plugins import ActionPlugin
-from parsing import Parser
-from recipes import RecipesReasoner
-from hspl import HSPLReasoner
-from mspl import MSPLReasoner
+from cybertop.plugins import ActionPlugin
+from cybertop.parsing import Parser
+from cybertop.recipes import RecipesReasoner
+from cybertop.hspl import HSPLReasoner
+from cybertop.mspl import MSPLReasoner
 import pika
 from lxml import etree
 import signal

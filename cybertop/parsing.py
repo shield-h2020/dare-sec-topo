@@ -24,7 +24,7 @@ import re
 from dateutil import parser
 import ipaddress
 from lxml import etree
-from attacks import Attack, AttackEvent
+from cybertop.attacks import Attack, AttackEvent
 import os
 
 class Parser(object):
