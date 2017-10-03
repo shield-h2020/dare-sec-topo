@@ -8,7 +8,7 @@
 		<action>limit</action>
 		<traffic-constraints>
 			<type>UDP</type>
-			<rate-limit>100/s</rate-limit>
+			<rate-limit>100kbit/s</rate-limit>
 		</traffic-constraints>
 	</recipe>
 
