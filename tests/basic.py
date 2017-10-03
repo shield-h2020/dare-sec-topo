@@ -18,8 +18,10 @@ Basic tests for the CyberTop class.
 :author: Daniele Canavese
 """
 
-from cybertop import CyberTop
+import sys
+sys.path.append("../src")
 
+from cybertop import CyberTop
 import unittest
 
 class BasicTest(unittest.TestCase):
