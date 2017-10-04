@@ -20,6 +20,7 @@ HSPL and stuff.
 
 import logging
 from lxml import etree
+from cybertop.util import get_hspl_xsd_path
 
 class HSPLReasoner(object):
     """
@@ -56,8 +57,7 @@ class HSPLReasoner(object):
         if recipe is None:
             return None
         
-        hsplSchema = self.configParser.get("global", "hsplSchema")
-        schema = etree.XMLSchema(etree.parse(hsplSchema))
+        schema = etree.XMLSchema(etree.parse(get_hspl_xsd_path()))
         
         hsplSet = etree.Element("{%s}hspl-set" % self.NAMESPACE_HSPL, nsmap = {None : self.NAMESPACE_HSPL, "xsi" : self.NAMESPACE_XSI})
         

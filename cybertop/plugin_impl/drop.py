@@ -18,7 +18,7 @@ Rate limit plug-in.
 @author: Daniele Canavese
 """
 
-from cybertop import ActionPlugin
+from cybertop.plugins import ActionPlugin
 
 class DropPlugin(ActionPlugin):
     """

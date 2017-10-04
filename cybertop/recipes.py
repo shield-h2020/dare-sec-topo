@@ -23,6 +23,7 @@ import re
 from dateutil import parser
 import os
 from lxml import etree
+from cybertop.util import get_recipes_path, get_recipe_xsd_path
 
 class RecipesReasoner(object):
     """
@@ -50,21 +51,18 @@ class RecipesReasoner(object):
         @return: The set of recipes that can mitigate the attack. It is an empty list if no recipe is available.
         @raise IOError: if a file or directory cannot be read.
         """
-        # Reads some configuration values.
-        recipeSchema = self.configParser.get("global", "recipeSchema")
-        recipeDirectory = self.configParser.get("global", "recipeDirectory")
         
         try:
             # Parses the XML schema.
-            schema = etree.XMLSchema(etree.parse(recipeSchema))
+            schema = etree.XMLSchema(etree.parse(get_recipe_xsd_path()))
             parser = etree.XMLParser(schema = schema)
         
             recipes = set()
-            
+            recipes_path = get_recipes_path()
             # We find all the valid recipes.
-            for file in os.listdir(recipeDirectory):
+            for file in os.listdir(recipes_path):
                 if file.endswith(".xml"):
-                    path = os.path.join(recipeDirectory, file)
+                    path = os.path.join(recipes_path, file)
                     try:
                         recipeSet = etree.parse(path, parser).getroot()
                         minSeverity = int(recipeSet.attrib["minSeverity"])
@@ -78,7 +76,7 @@ class RecipesReasoner(object):
             self.logger.debug("Found %s suitable recipes.", len(recipes))
             return recipes
         except FileNotFoundError:
-            raise IOError("Unable to read the recipe directory '%s'" % recipeDirectory)
+            raise IOError("Unable to read the recipe directory '%s'" % recipes_path)
         
     def __filterNonEnforceableRecipes(self, recipes, landscape):
         """

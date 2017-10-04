@@ -21,8 +21,17 @@ Basic tests for the CyberTop class.
 import sys
 sys.path.append("../src")
 
-from cybertop import CyberTop
+from cybertop.cybertop import CyberTop
 import unittest
+
+import os
+
+def get_test_data_path(filename):
+    """
+    Retrieves the test data path
+    """
+    return os.path.join(os.path.dirname(__file__), filename)
+
 
 class BasicTest(unittest.TestCase):
     """
@@ -39,14 +48,23 @@ class BasicTest(unittest.TestCase):
         cyberTop = CyberTop()
 
         # Chooses limit.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("1-TCP flood-123.csv", "landscape1.xml")  # @UnusedVariable
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("1-TCP flood-123.csv"),
+            get_test_data_path("landscape1.xml"))  # @UnusedVariable
+        
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+        
         for i in actions:
             self.assertEqual(i.text, "limit")
 
         # Chooses drop.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("1-TCP flood-123.csv", "landscape2.xml")  # @UnusedVariable
+        
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("1-TCP flood-123.csv"),
+            get_test_data_path("landscape2.xml"))  # @UnusedVariable
+        
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+        
         for i in actions:
             self.assertEqual(i.text, "drop")
     
@@ -57,13 +75,17 @@ class BasicTest(unittest.TestCase):
         cyberTop = CyberTop()
 
         # Chooses drop.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("3-TCP flood-125.csv", "landscape1.xml")  # @UnusedVariable
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("3-TCP flood-125.csv"),
+            get_test_data_path("landscape1.xml"))  # @UnusedVariable
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
         for i in actions:
             self.assertEqual(i.text, "drop")
 
         # Chooses drop.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("3-TCP flood-125.csv", "landscape2.xml")  # @UnusedVariable
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("3-TCP flood-125.csv"),
+            get_test_data_path("landscape2.xml"))  # @UnusedVariable
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
         for i in actions:
             self.assertEqual(i.text, "drop")
@@ -75,13 +97,17 @@ class BasicTest(unittest.TestCase):
         cyberTop = CyberTop()
 
         # Chooses limit.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("1-UDP flood-124.csv", "landscape1.xml")  # @UnusedVariable
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("1-UDP flood-124.csv"),
+            get_test_data_path("landscape1.xml"))  # @UnusedVariable
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
         for i in actions:
             self.assertEqual(i.text, "limit")
 
         # Chooses drop.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("1-UDP flood-124.csv", "landscape2.xml")  # @UnusedVariable
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("1-UDP flood-124.csv"),
+            get_test_data_path("landscape2.xml"))  # @UnusedVariable
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
         for i in actions:
             self.assertEqual(i.text, "drop")
@@ -93,13 +119,17 @@ class BasicTest(unittest.TestCase):
         cyberTop = CyberTop()
 
         # Chooses drop.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("3-UDP flood-126.csv", "landscape1.xml")  # @UnusedVariable
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("3-UDP flood-126.csv"),
+            get_test_data_path("landscape1.xml"))  # @UnusedVariable
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
         for i in actions:
             self.assertEqual(i.text, "drop")
 
         # Chooses drop.        
-        [hsplSet, msplSet] = cyberTop.getMSPLs("3-UDP flood-126.csv", "landscape2.xml")  # @UnusedVariable
+        [hsplSet, msplSet] = cyberTop.getMSPLs(
+            get_test_data_path("3-UDP flood-126.csv"),
+            get_test_data_path("landscape2.xml"))  # @UnusedVariable
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
         for i in actions:
             self.assertEqual(i.text, "drop")

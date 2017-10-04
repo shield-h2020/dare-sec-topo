@@ -11,26 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import pyinotify
 
 """
 The CyberSecurity Topologies related stuff.
 
 @author: Daniele Canavese
 """
-
+import pyinotify
 import logging
 import os
 from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
-from plugins import ActionPlugin
-from parsing import Parser
-from recipes import RecipesReasoner
-from hspl import HSPLReasoner
-from mspl import MSPLReasoner
+from cybertop.plugins import ActionPlugin
+from cybertop.parsing import Parser
+from cybertop.recipes import RecipesReasoner
+from cybertop.hspl import HSPLReasoner
+from cybertop.mspl import MSPLReasoner
 import pika
 from lxml import etree
 import signal
+from cybertop.util import get_plugin_impl_path
 
 class CyberTop(pyinotify.ProcessEvent):
     """
@@ -69,8 +69,8 @@ class CyberTop(pyinotify.ProcessEvent):
 
         # Configures the plug-ins.
         self.pluginManager = PluginManager()
-        self.pluginManager.setPluginPlaces([self.configParser.get("global", "pluginsDirectory")])
-        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin});
+        self.pluginManager.setPluginPlaces([get_plugin_impl_path()])
+        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin})
         self.pluginManager.collectPlugins()
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Action"))
         if pluginsCount > 1:
@@ -143,7 +143,8 @@ class CyberTop(pyinotify.ProcessEvent):
 
     def process_IN_CREATE(self, event):
         try:
-            [hsplSet, msplSet] = self.getMSPLs(event.pathname, self.configParser.get("global", "landscapeFile"))
+            #[hsplSet, msplSet] = self.getMSPLs(event.pathname, self.configParser.get("global", "landscapeFile"))
+            [hsplSet, msplSet] = self.getMSPLs(event.pathname, 'landscape1.xml')
             hsplString = etree.tostring(hsplSet, pretty_print = True).decode()
             msplString = etree.tostring(msplSet, pretty_print = True).decode()
             message = hsplString + msplString
