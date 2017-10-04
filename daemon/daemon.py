@@ -1,3 +1,4 @@
+#
 # Copyright 2017 Politecnico di Torino
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,14 +51,16 @@ class CyberTopDaemon(object):
             dest='conf',
             metavar="FILE",
             default="./cybertop.cfg",
+			required=True,
             help="Specifies the app configuration file"
         )
         p.add_argument(
-            "-lc",
+            "-l",
             "--log-conf",
             dest='log_conf',
             metavar="FILE",
             default="./logging.ini",
+			required=True,
             help="Specifies the logging configuration file"
         )
         
