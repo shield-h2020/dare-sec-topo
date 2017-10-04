@@ -24,11 +24,7 @@ setup(
 
     classifiers=[
         'Development Status :: 3 - Alpha',
-
         'License :: OSI Approved :: Apache License 2.0',
-
-        #'Programming Language :: Python :: 2',
-        #'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
@@ -48,36 +44,11 @@ setup(
         'pika'
     ],
 
-    # List additional groups of dependencies here (e.g. development
-    # dependencies). You can install these using the following syntax,
-    # for example:
-    # $ pip install -e .[dev,test]
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],
     },
-
-    # If there are data files included in your packages that need to be
-    # installed, specify them here.  If using Python 2.6 or less, then these
-    # have to be included in MANIFEST.in as well.
-    #package_data={
-    #    'cybertop': ['xsd/*.xsd','plugin_impl/*','recipes/*.xml'],
-    #},
-
+    test_suite="tests",
     include_package_data = True,
     zip_safe = False,
-    # Although 'package_data' is the preferred approach, in some case you may
-    # need to place data files outside of your packages. See:
-    # http://docs.python.osrg/3.4/distutils/setupscript.html#installing-additional-files # noqa
-    # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    #data_files=[('my_data', ['data/data_file'])],
-
-    # To provide executable scripts, use entry points in preference to the
-    # "scripts" keyword. Entry points provide cross-platform support and allow
-    # pip to create the appropriate form of executable for the target platform.
-    #entry_points={
-    #    'console_scripts': [
-    #        'sample=sample:main',
-    #    ],
-    #},
 )
