@@ -27,6 +27,7 @@ from cybertop.attacks import Attack, AttackEvent
 import os
 from cybertop.util import get_landscape_xsd_path
 from cybertop.log import LOG
+import os.path
 
 class Parser(object):
     """
@@ -111,7 +112,11 @@ class Parser(object):
         """
         schema = etree.XMLSchema(etree.parse(get_landscape_xsd_path()))
         parser = etree.XMLParser(schema = schema)
-
+        
+        if not os.path.exists(fileName):
+            LOG.critical("The file '%s' does not exist", fileName)
+            raise IOError("The file '%s' does not exist", fileName)
+            
         root = etree.parse(fileName, parser).getroot()
         landscape = {}
         for i in root:
