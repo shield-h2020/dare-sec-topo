@@ -45,7 +45,10 @@ class BasicTest(unittest.TestCase):
         """
         Tests the TCP flood, low severity.
         """
-        cyberTop = CyberTop()
+        cyberTop = CyberTop(
+            get_test_data_path('cybertop.cfg'),
+            get_test_data_path('logging.ini')
+        )
 
         # Chooses limit.        
         [hsplSet, msplSet] = cyberTop.getMSPLs(
@@ -72,7 +75,10 @@ class BasicTest(unittest.TestCase):
         """
         Tests the TCP flood, high severity.
         """
-        cyberTop = CyberTop()
+        cyberTop = CyberTop(
+            get_test_data_path('cybertop.cfg'),
+            get_test_data_path('logging.ini')
+        )
 
         # Chooses drop.        
         [hsplSet, msplSet] = cyberTop.getMSPLs(
@@ -94,7 +100,10 @@ class BasicTest(unittest.TestCase):
         """
         Tests the UDP flood, low severity.
         """
-        cyberTop = CyberTop()
+        cyberTop = CyberTop(
+            get_test_data_path('cybertop.cfg'),
+            get_test_data_path('logging.ini')
+        )
 
         # Chooses limit.        
         [hsplSet, msplSet] = cyberTop.getMSPLs(
@@ -116,7 +125,10 @@ class BasicTest(unittest.TestCase):
         """
         Tests the UDP flood, high severity.
         """
-        cyberTop = CyberTop()
+        cyberTop = CyberTop(
+            get_test_data_path('cybertop.cfg'),
+            get_test_data_path('logging.ini')
+        )
 
         # Chooses drop.        
         [hsplSet, msplSet] = cyberTop.getMSPLs(
