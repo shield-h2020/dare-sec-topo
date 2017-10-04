@@ -65,7 +65,9 @@ class CyberTop(pyinotify.ProcessEvent):
         if len(c) > 0:
             LOG.debug("Configuration file %s read.", c[0])
         else:
-            LOG.warning("Configuration file not read.")
+            LOG.critical("Configuration file not read.")
+            raise IOError("Cannot read configuration file from %s.",
+                configurationFileName)
 
         # Configures the plug-ins.
         self.pluginManager = PluginManager()
@@ -159,4 +161,8 @@ class CyberTop(pyinotify.ProcessEvent):
                 with open(self.configParser.get("global", "dashboardFile"), "a") as f:
                     f.write(message)
         except:
-            pass
+            LOG.critical("Error while transferring the HSPL and MSPL to dashboard")
+            raise IOError("Cannot transfer HSPL and MSPL to dashboard")
+
+
+            raise
