@@ -26,6 +26,7 @@ import ipaddress
 from lxml import etree
 from cybertop.attacks import Attack, AttackEvent
 import os
+from cybertop.util import get_landscape_xsd_path
 
 class Parser(object):
     """
@@ -110,8 +111,7 @@ class Parser(object):
         @return: the landscape map.
         @raise IOError: if the file has an invalid format.
         """
-        landscapeSchema = self.configParser.get("global", "landscapeSchema")
-        schema = etree.XMLSchema(etree.parse(landscapeSchema))
+        schema = etree.XMLSchema(etree.parse(get_landscape_xsd_path()))
         parser = etree.XMLParser(schema = schema)
 
         root = etree.parse(fileName, parser).getroot()
