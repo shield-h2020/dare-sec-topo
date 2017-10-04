@@ -22,6 +22,12 @@ import pkg_resources
 
 # Global constants
 PLUGIN_IMPL_DIR_NAME = 'plugin_impl'
+XSD_DIR_NAME = 'xsd'
+RECIPES_DIR_NAME = 'recipes'
+LANDSCAPE_XSD_FILE_NAME = 'landscape.xsd'
+HSPL_XSD_FILE_NAME = 'hspl.xsd'
+MSPL_XSD_FILE_NAME = 'mspl.xsd'
+RECIPE_XSD_FILE_NAME = 'recipe.xsd'
 
 def get_plugin_impl_path():
     """
@@ -30,10 +36,43 @@ def get_plugin_impl_path():
     """
     return pkg_resources.resource_filename(__name__, PLUGIN_IMPL_DIR_NAME)
 
-def get_plugina_impl_path():
+def get_recipes_path():
     """
-    Retrieve the path of the plugin implementation directory
+    Retrieve the path of the recipes directory
     @return: The path of the requested directory.
     """
-    return pkg_resources.resource_filename(__name__, PLUGIN_IMPL_DIR_NAME)
+    return pkg_resources.resource_filename(__name__, RECIPES_DIR_NAME)
+
+def get_landscape_xsd_path():
+    """
+    Retrieve the path of the landscape XSD schema
+    @return: The path of the requested file.
+    """
+    return pkg_resources.resource_filename(__name__,
+        '/'.join((XSD_DIR_NAME, LANDSCAPE_XSD_FILE_NAME)))
+
+def get_recipe_xsd_path():
+    """
+    Retrieve the path of the recipe XSD schema
+    @return: The path of the requested file.
+    """
+    return pkg_resources.resource_filename(__name__,
+        '/'.join((XSD_DIR_NAME, RECIPE_XSD_FILE_NAME)))
+
+def get_hspl_xsd_path():
+    """
+    Retrieve the path of the HSPL XSD schema
+    @return: The path of the requested file.
+    """
+    return pkg_resources.resource_filename(__name__,
+        '/'.join((XSD_DIR_NAME, HSPL_XSD_FILE_NAME)))
+
+def get_mspl_xsd_path():
+    """
+    Retrieve the path of the MSPL XSD schema
+    @return: The path of the requested file.
+    """
+    return pkg_resources.resource_filename(__name__,
+        '/'.join((XSD_DIR_NAME, MSPL_XSD_FILE_NAME)))
+
 

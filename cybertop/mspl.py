@@ -22,6 +22,7 @@ import logging
 from lxml import etree
 import re
 import random
+from cybertop.util import get_mspl_xsd_path
 
 class MSPLReasoner(object):
     """
@@ -57,8 +58,7 @@ class MSPLReasoner(object):
         if hsplSet is None:
             return None
         
-        hsplSchema = self.configParser.get("global", "msplSchema")
-        schema = etree.XMLSchema(etree.parse(hsplSchema))
+        schema = etree.XMLSchema(etree.parse(get_mspl_xsd_path()))
         
         msplSet = etree.Element("{%s}mspl-set" % self.NAMESPACE_MSPL, nsmap = {None : self.NAMESPACE_MSPL, "xsi" : self.NAMESPACE_XSI})
                   
