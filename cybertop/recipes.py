@@ -18,12 +18,12 @@ Recipes and attack mitigation.
 @author: Daniele Canavese
 """
 
-import logging
 import re
 from dateutil import parser
 import os
 from lxml import etree
 from cybertop.util import get_recipes_path, get_recipe_xsd_path
+from cybertop.log import LOG
 
 class RecipesReasoner(object):
     """
@@ -39,10 +39,8 @@ class RecipesReasoner(object):
         @param configParser: The configuration parser.
         @param pluginManager: The plug-in manager.
         """
-        self.logger = logging.getLogger("recipes-reasoner")
         self.configParser = configParser
         self.pluginManager = pluginManager
-        self.logger.debug("Recipes reasoner initialized.")
     
     def __getRecipes(self, attack):
         """
@@ -71,9 +69,9 @@ class RecipesReasoner(object):
                         if attack.type == attackType and attack.severity >= minSeverity and attack.severity <= maxSeverity:
                             recipes.update(recipeSet.getchildren())
                     except etree.XMLSyntaxError:
-                        self.logger.warning("The file '%s' is an invalid recipe.", path)
+                        LOG.warning("The file '%s' is an invalid recipe.", path)
                         
-            self.logger.debug("Found %s suitable recipes.", len(recipes))
+            LOG.debug("Found %s suitable recipes.", len(recipes))
             return recipes
         except FileNotFoundError:
             raise IOError("Unable to read the recipe directory '%s'" % recipes_path)
@@ -99,9 +97,9 @@ class RecipesReasoner(object):
         
         notEnforceable = len(recipes) - len(validRecipes)
         if notEnforceable == 1:
-            self.logger.debug("Removed %s non-enforceable recipe, %d remaining.", notEnforceable, len(validRecipes))
+            LOG.debug("Removed %s non-enforceable recipe, %d remaining.", notEnforceable, len(validRecipes))
         elif notEnforceable > 1:
-            self.logger.debug("Removed %s non-enforceable recipes, %d remaining.", notEnforceable, len(validRecipes))
+            LOG.debug("Removed %s non-enforceable recipes, %d remaining.", notEnforceable, len(validRecipes))
         return validRecipes
 
     def __getBestRecipe(self, recipes, landscape):
@@ -142,5 +140,5 @@ class RecipesReasoner(object):
         recipe = self.__getBestRecipe(recipes, landscape)
 
         recipeName = recipe.findtext("{%s}name" % self.NAMESPACE_RECIPE)
-        self.logger.info("Recipe '%s' chosen.", recipeName)
+        LOG.info("Recipe '%s' chosen.", recipeName)
         return recipe

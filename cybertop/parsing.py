@@ -18,7 +18,6 @@ CSV parsing & co.
 @author: Daniele Canavese
 """
 
-import logging
 import ntpath
 import re
 from dateutil import parser
@@ -27,6 +26,7 @@ from lxml import etree
 from cybertop.attacks import Attack, AttackEvent
 import os
 from cybertop.util import get_landscape_xsd_path
+from cybertop.log import LOG
 
 class Parser(object):
     """
@@ -41,9 +41,7 @@ class Parser(object):
         Constructor.
         @param configParser: The configuration parser.
         """
-        self.logger = logging.getLogger("parser")
         self.configParser = configParser
-        self.logger.debug("Parser initialized.")
 
     def getAttack(self, fileName):
         """
@@ -54,13 +52,13 @@ class Parser(object):
         """
         # First: checks if the file is a regular file.
         if not ntpath.isfile(fileName):
-            self.logger.critical("The file '%s' is not a regular file.", fileName)
+            LOG.critical("The file '%s' is not a regular file.", fileName)
             raise IOError("The file '%s' is not a regular file." % fileName)
         
         # Second: checks the file name format.
         match = re.match("^([1234])-(.+)?-(\d+)\.csv$", os.path.basename(fileName))
         if not match:
-            self.logger.critical("The file '%s' has an invalid name.", fileName)
+            LOG.critical("The file '%s' has an invalid name.", fileName)
             raise IOError("The file '%s' has an invalid name." % fileName)
         
         # Retrieves the severity, the attack type and the identifier.
@@ -80,13 +78,13 @@ class Parser(object):
                     parts = re.split("\s", line.rstrip())
                     # Columns check.
                     if len(parts) != 19:
-                        self.logger.critical("The file '%s' has an invalid format.", fileName)
+                        LOG.critical("The file '%s' has an invalid format.", fileName)
                         raise IOError("The file '%s' has an invalid format." % fileName)
                     # Various format checks.
                     if not (re.match("\d+-\d+-\d+", parts[0]) and re.match("\d+:\d+:\d+", parts[1]) and re.match("\d+\.\d+\.\d+\.\d+", parts[9]) and
                         re.match("\d+\.\d+\.\d+\.\d+", parts[10]) and re.match("\d+", parts[11]) and re.match("\d+", parts[12]) and
                         re.match("TCP|UDP", parts[13])):
-                        self.logger.critical("The file '%s' has an invalid format.", fileName)
+                        LOG.critical("The file '%s' has an invalid format.", fileName)
                         raise IOError("The file '%s' has an invalid format." % fileName)
                     timestamp = parser.parse("%s %s" % (parts[0], parts[1]))
                     sourceAddress = ipaddress.ip_address(parts[9])
@@ -98,10 +96,10 @@ class Parser(object):
         
         # Third: checks if there are some events.
         if count <= 1:
-            self.logger.critical("The file '%s' is empty.", fileName)
+            LOG.critical("The file '%s' is empty.", fileName)
             raise IOError("The file '%s' is empty." % fileName)
                     
-        self.logger.info("Parsed an attack of type '%s' with severity %d and containing %d events.", attack.type, attack.severity, len(attack.events))
+        LOG.info("Parsed an attack of type '%s' with severity %d and containing %d events.", attack.type, attack.severity, len(attack.events))
         return attack
     
     def getLandscape(self, fileName):
@@ -123,5 +121,5 @@ class Parser(object):
                 capabilities.add(j.text)
             landscape[identifier] = capabilities
         
-        self.logger.info("Landscape with %d IT resources read.", len(landscape))
+        LOG.info("Landscape with %d IT resources read.", len(landscape))
         return landscape

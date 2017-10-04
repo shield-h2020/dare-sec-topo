@@ -17,8 +17,8 @@ The CyberSecurity Topologies related stuff.
 
 @author: Daniele Canavese
 """
+
 import pyinotify
-import logging
 import os
 from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
@@ -31,6 +31,8 @@ import pika
 from lxml import etree
 import signal
 from cybertop.util import get_plugin_impl_path
+from cybertop import log
+from cybertop.log import LOG
 
 class CyberTop(pyinotify.ProcessEvent):
     """
@@ -39,22 +41,20 @@ class CyberTop(pyinotify.ProcessEvent):
     
     # The configuration file.
     CONFIGURATION_FILES = ["./cybertop.cfg", "/etc/cybertop.cfg", os.path.expanduser('~/.cybertop.cfg')]
-    # The log file.
-    LOG_FILE = "cybertop.log"
     # The pid file.
     PID_FILE = "/tmp/cybertop.pid"
     # The version number.
     VERSION = "0.2"
 
-    def __init__(self, configurationFileName = None):
+    def __init__(self, configurationFileName = None, 
+        logConfigurationFileName = None):
         """
         Constructor.
         @param configurationFileName: the name of the configuration file to parse.
         """
         # Configures the logging.
-        logging.basicConfig(filename  = self.LOG_FILE, level = logging.DEBUG, format = "%(asctime)-25s %(levelname)-8s %(message)s")
-        logging.getLogger("yapsy").setLevel(logging.WARNING)
-        self.logger = logging.getLogger("cybertop")
+
+        log.load_settings(logConfigurationFileName)
         
         # Configures the configuration file parser.
         self.configParser = ConfigParser()
@@ -63,9 +63,9 @@ class CyberTop(pyinotify.ProcessEvent):
         else:
             c = self.configParser.read(configurationFileName)
         if len(c) > 0:
-            self.logger.debug("Configuration file %s read.", c[0])
+            LOG.debug("Configuration file %s read.", c[0])
         else:
-            self.logger.warning("Configuration file not read.")
+            LOG.warning("Configuration file not read.")
 
         # Configures the plug-ins.
         self.pluginManager = PluginManager()
@@ -74,15 +74,15 @@ class CyberTop(pyinotify.ProcessEvent):
         self.pluginManager.collectPlugins()
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Action"))
         if pluginsCount > 1:
-            self.logger.debug("Found %d plug-ins.", pluginsCount)
+            LOG.debug("Found %d plug-ins.", pluginsCount)
         else:
-            self.logger.debug("Found %d plug-in.", pluginsCount)
+            LOG.debug("Found %d plug-in.", pluginsCount)
         # Loads all the sub-modules.
         self.parser = Parser(self.configParser)
         self.recipesReasoner = RecipesReasoner(self.configParser, self.pluginManager)
         self.hsplReasoner = HSPLReasoner(self.configParser, self.pluginManager)
         self.msplReasoner = MSPLReasoner(self.configParser, self.pluginManager)
-        self.logger.info("CyberSecurity Topologies initialized.")
+        LOG.info("CyberSecurity Topologies initialized.")
     
     def getMSPLs(self, attackFileName, landscapeFileName):
         """
@@ -120,7 +120,7 @@ class CyberTop(pyinotify.ProcessEvent):
                 retry_delay = retryDelay))
             self.channel = connection.channel()
             self.channel.queue_declare(queue = self.configParser.get("global", "dashboardQueue"))
-            self.logger.info("Connected to the dashboard.")
+            LOG.info("Connected to the dashboard.")
         else:
             self.channel = None
         
@@ -143,10 +143,10 @@ class CyberTop(pyinotify.ProcessEvent):
 
     def process_IN_CREATE(self, event):
         try:
-            #[hsplSet, msplSet] = self.getMSPLs(event.pathname, self.configParser.get("global", "landscapeFile"))
-            [hsplSet, msplSet] = self.getMSPLs(event.pathname, 'landscape1.xml')
-            hsplString = etree.tostring(hsplSet, pretty_print = True).decode()
-            msplString = etree.tostring(msplSet, pretty_print = True).decode()
+            [hsplSet, msplSet] = self.getMSPLs(event.pathname, self.configParser.get("global", "landscapeFile"))
+            hsplString = etree.tostring(hsplSet).decode()
+            msplString = etree.tostring(msplSet).decode()
+            
             message = hsplString + msplString
             
             # Sends everything to RabbitMQ.

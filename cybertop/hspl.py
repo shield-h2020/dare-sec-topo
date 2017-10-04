@@ -18,9 +18,9 @@ HSPL and stuff.
 @author: Daniele Canavese
 """
 
-import logging
 from lxml import etree
 from cybertop.util import get_hspl_xsd_path
+from cybertop.log import LOG
 
 class HSPLReasoner(object):
     """
@@ -40,10 +40,8 @@ class HSPLReasoner(object):
         @param configParser: The configuration parser.
         @param pluginManager: The plug-in manager.
         """
-        self.logger = logging.getLogger("HSPL-reasoner")
         self.configParser = configParser
         self.pluginManager = pluginManager
-        self.logger.debug("HSPLs reasoner initialized.")
         
     def getHSPLs(self, attack, recipe, landscape):
         """
@@ -95,10 +93,14 @@ class HSPLReasoner(object):
         if schema.validate(hsplSet):
             hsplCount = len(hsplSet.getchildren())
             if hsplCount == 1:
-                self.logger.info("%d HSPL generated.", hsplCount)
+                LOG.info("%d HSPL generated.", hsplCount)
             else:
-                self.logger.info("%d HSPLs generated.", hsplCount)
+                LOG.info("%d HSPLs generated.", hsplCount)
+            
+            LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
+            
             return hsplSet
+        
         else:
-            self.logger.critical("Invalid HSPL set generated.")
+            LOG.critical("Invalid HSPL set generated.")
             raise SyntaxError("Invalid HSPL set generated.")
