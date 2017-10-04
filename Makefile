@@ -1,5 +1,5 @@
 target:
-	python setup.py install
+	python setup.py install test
 
 clean:
 	pip uninstall -y cybertop
