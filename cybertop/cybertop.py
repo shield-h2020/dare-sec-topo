@@ -30,6 +30,7 @@ from cybertop.mspl import MSPLReasoner
 import pika
 from lxml import etree
 import signal
+from cybertop.util import get_plugin_impl_path
 
 class CyberTop(pyinotify.ProcessEvent):
     """
@@ -68,8 +69,8 @@ class CyberTop(pyinotify.ProcessEvent):
 
         # Configures the plug-ins.
         self.pluginManager = PluginManager()
-        self.pluginManager.setPluginPlaces([self.configParser.get("global", "pluginsDirectory")])
-        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin});
+        self.pluginManager.setPluginPlaces([get_plugin_impl_path()])
+        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin})
         self.pluginManager.collectPlugins()
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Action"))
         if pluginsCount > 1:
@@ -142,7 +143,8 @@ class CyberTop(pyinotify.ProcessEvent):
 
     def process_IN_CREATE(self, event):
         try:
-            [hsplSet, msplSet] = self.getMSPLs(event.pathname, self.configParser.get("global", "landscapeFile"))
+            #[hsplSet, msplSet] = self.getMSPLs(event.pathname, self.configParser.get("global", "landscapeFile"))
+            [hsplSet, msplSet] = self.getMSPLs(event.pathname, 'landscape1.xml')
             hsplString = etree.tostring(hsplSet, pretty_print = True).decode()
             msplString = etree.tostring(msplSet, pretty_print = True).decode()
             message = hsplString + msplString
