@@ -3,7 +3,7 @@ target:
 
 clean:
 	pip uninstall -y cybertop
-	rm -fr dist build cybertop.egg-info
+	rm -fr dist build cybertop.egg-info *.log
 
 
 
