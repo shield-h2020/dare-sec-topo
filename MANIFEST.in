@@ -1,0 +1,3 @@
+include cybertop/xsd/*.xsd
+include cybertop/recipes/*.xml
+include cybertop/plugin_impl/*
