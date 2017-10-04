@@ -18,11 +18,11 @@ MSPL and stuff.
 @author: Daniele Canavese
 """
 
-import logging
 from lxml import etree
 import re
 import random
 from cybertop.util import get_mspl_xsd_path
+from cybertop.log import LOG
 
 class MSPLReasoner(object):
     """
@@ -42,10 +42,8 @@ class MSPLReasoner(object):
         @param configParser: The configuration parser.
         @param pluginManager: The plug-in manager.
         """
-        self.logger = logging.getLogger("MSPL-reasoner")
         self.configParser = configParser
         self.pluginManager = pluginManager
-        self.logger.debug("MSPLs reasoner initialized.")
     
     def getMSPLs(self, hsplSet, landscape):
         """
@@ -86,12 +84,15 @@ class MSPLReasoner(object):
         if schema.validate(msplSet):
             msplCount = len(msplSet.getchildren()) - 1
             if msplCount == 1:
-                self.logger.info("%d MSPL generated.", msplCount)
+                LOG.info("%d MSPL generated.", msplCount)
             else:
-                self.logger.info("%d MSPLs generated.", msplCount)
+                LOG.info("%d MSPLs generated.", msplCount)
+
+            LOG.debug(etree.tostring(msplSet, pretty_print = True).decode())
+
             return msplSet
         else:
-            self.logger.critical("Invalid MSPL set generated.")
+            LOG.critical("Invalid MSPL set generated.")
             raise SyntaxError("Invalid MSPL set generated.")
     
     def __findLocation(self, hsplSet, landscape):
