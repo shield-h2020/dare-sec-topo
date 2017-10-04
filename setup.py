@@ -39,7 +39,14 @@ setup(
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    install_requires=['pyinotify','yapsy','lxml','python-dateutil','pika'],
+    install_requires=[
+        'setuptools',
+        'pyinotify',
+        'yapsy',
+        'lxml',
+        'python-dateutil',
+        'pika'
+    ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
