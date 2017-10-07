@@ -19,20 +19,16 @@ HSPL and stuff.
 """
 
 from lxml import etree
-from cybertop.util import get_hspl_xsd_path
+from cybertop.util import getHSPLXSDFile
+from cybertop.util import getRecipeNamespace
+from cybertop.util import getHSPLNamespace
+from cybertop.util import getXSINamespace
 from cybertop.log import LOG
 
 class HSPLReasoner(object):
     """
     Finds the HSPLs that can be used to mitigate an attack.
     """
-
-    # The recipe namespace.
-    NAMESPACE_RECIPE = "http://security.polito.it/shield/recipe"
-    # The HSPL namespace.
-    NAMESPACE_HSPL = "http://security.polito.it/shield/hspl"
-    # The XSI namespace.
-    NAMESPACE_XSI = "http://www.w3.org/2001/XMLSchema-instance"
     
     def __init__(self, configParser, pluginManager):
         """
@@ -55,40 +51,42 @@ class HSPLReasoner(object):
         if recipe is None:
             return None
         
-        schema = etree.XMLSchema(etree.parse(get_hspl_xsd_path()))
+        schema = etree.XMLSchema(etree.parse(getHSPLXSDFile()))
         
-        hsplSet = etree.Element("{%s}hspl-set" % self.NAMESPACE_HSPL, nsmap = {None : self.NAMESPACE_HSPL, "xsi" : self.NAMESPACE_XSI})
+        hsplSet = etree.Element("{%s}hspl-set" % getHSPLNamespace(), nsmap = {None : getHSPLNamespace(), "xsi" : getXSINamespace()})
         
         # Gather some data about the recipe.
-        recipeName = recipe.findtext("{%s}name" % self.NAMESPACE_RECIPE)
-        recipeAction = recipe.findtext("{%s}action" % self.NAMESPACE_RECIPE)
-        recipeType = recipe.findtext("{%s}traffic-constraints/{%s}type" % (self.NAMESPACE_RECIPE, self.NAMESPACE_RECIPE))
-        recipeMaxConnections = recipe.findtext("{%s}traffic-constraints/{%s}max-connections" % (self.NAMESPACE_RECIPE, self.NAMESPACE_RECIPE))
-        recipeRateLimit = recipe.findtext("{%s}traffic-constraints/{%s}rate-limit" % (self.NAMESPACE_RECIPE, self.NAMESPACE_RECIPE))
+        recipeName = recipe.findtext("{%s}name" % getRecipeNamespace())
+        recipeAction = recipe.findtext("{%s}action" % getRecipeNamespace())
+        recipeType = recipe.findtext("{%s}traffic-constraints/{%s}type" % (getRecipeNamespace(), getRecipeNamespace()))
+        recipeMaxConnections = recipe.findtext("{%s}traffic-constraints/{%s}max-connections" % (getRecipeNamespace(), getRecipeNamespace()))
+        recipeRateLimit = recipe.findtext("{%s}traffic-constraints/{%s}rate-limit" % (getRecipeNamespace(), getRecipeNamespace()))
         
         # Adds the context.
-        context = etree.SubElement(hsplSet, "{%s}context" % self.NAMESPACE_HSPL)
-        etree.SubElement(context, "{%s}severity" % self.NAMESPACE_HSPL).text = str(attack.severity)
-        etree.SubElement(context, "{%s}type" % self.NAMESPACE_HSPL).text = attack.type
-        etree.SubElement(context, "{%s}timestamp" % self.NAMESPACE_HSPL).text = attack.getTimestamp().isoformat()
+        context = etree.SubElement(hsplSet, "{%s}context" % getHSPLNamespace())
+        etree.SubElement(context, "{%s}severity" % getHSPLNamespace()).text = str(attack.severity)
+        etree.SubElement(context, "{%s}type" % getHSPLNamespace()).text = attack.type
+        etree.SubElement(context, "{%s}timestamp" % getHSPLNamespace()).text = attack.getTimestamp().isoformat()
         
         # Adds an HSPL for each event.
         count = 0
         for i in attack.events:
             count += 1
-            hspl = etree.SubElement(hsplSet, "{%s}hspl" % self.NAMESPACE_HSPL)
-            etree.SubElement(hspl, "{%s}name" % self.NAMESPACE_HSPL).text = "%s #%d" % (recipeName, count)
-            etree.SubElement(hspl, "{%s}subject" % self.NAMESPACE_HSPL).text = "%s:%d" % (str(i.destinationAddress), i.destinationPort)
-            etree.SubElement(hspl, "{%s}action" % self.NAMESPACE_HSPL).text = recipeAction
-            etree.SubElement(hspl, "{%s}object" % self.NAMESPACE_HSPL).text = "%s:%d" % (str(i.sourceAddress), i.sourcePort)
-            if recipeType is not None or recipeMaxConnections is not None or recipeRateLimit is not None:
-                trafficConstraints = etree.SubElement(hspl, "{%s}traffic-constraints" % self.NAMESPACE_HSPL)
-                if recipeType is not None:
-                    etree.SubElement(trafficConstraints, "{%s}type" % self.NAMESPACE_HSPL).text = recipeType
-                if recipeMaxConnections is not None:
-                    etree.SubElement(trafficConstraints, "{%s}max-connections" % self.NAMESPACE_HSPL).text = recipeMaxConnections
-                if recipeRateLimit is not None:
-                    etree.SubElement(trafficConstraints, "{%s}rate-limit" % self.NAMESPACE_HSPL).text = recipeRateLimit
+            hspl = etree.SubElement(hsplSet, "{%s}hspl" % getHSPLNamespace())
+            etree.SubElement(hspl, "{%s}name" % getHSPLNamespace()).text = "%s #%d" % (recipeName, count)
+            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = i.attacker
+            etree.SubElement(hspl, "{%s}action" % getHSPLNamespace()).text = recipeAction
+            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = i.target
+            trafficConstraints = etree.SubElement(hspl, "{%s}traffic-constraints" % getHSPLNamespace())
+            if recipeType is not None:
+                eventType = recipeType
+            else:
+                eventType = i.fields["protocol"]
+            etree.SubElement(trafficConstraints, "{%s}type" % getHSPLNamespace()).text = eventType
+            if eventType == "TCP" and recipeMaxConnections is not None:
+                etree.SubElement(trafficConstraints, "{%s}max-connections" % getHSPLNamespace()).text = recipeMaxConnections
+            if recipeRateLimit is not None:
+                etree.SubElement(trafficConstraints, "{%s}rate-limit" % getHSPLNamespace()).text = recipeRateLimit
         
         if schema.validate(hsplSet):
             hsplCount = len(hsplSet.getchildren())

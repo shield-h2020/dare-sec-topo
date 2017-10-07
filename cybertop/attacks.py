@@ -55,19 +55,14 @@ class AttackEvent(object):
     An attack event.
     """
     
-    def __init__(self, timestamp, sourceAddress, sourcePort, destinationAddress, destinationPort, protocol):
+    def __init__(self, timestamp, attacker, target):
         """
         Constructor.
         @param timestamp: The attack timestamp.
-        @param sourceAddress: The source address.
-        @param sourcePort: The source port.
-        @param destinationAddress: The destination address.
-        @param destinationPort: The destination port.
-        @param protocol: The protocol.
+        @param attacker: The attacker. It can be an IP, a URL, ...
+        @param target: The attack target. It can be an IP, a URL, ...
         """
         self.timestamp = timestamp
-        self.sourceAddress = sourceAddress
-        self.sourcePort = sourcePort
-        self.destinationAddress = destinationAddress
-        self.destinationPort = destinationPort
-        self.protocol = protocol
+        self.attacker = attacker
+        self.target = target
+        self.fields = {}

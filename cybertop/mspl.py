@@ -21,20 +21,16 @@ MSPL and stuff.
 from lxml import etree
 import re
 import random
-from cybertop.util import get_mspl_xsd_path
+from cybertop.util import getMSPLXSDFile
+from cybertop.util import getHSPLNamespace
+from cybertop.util import getMSPLNamespace
+from cybertop.util import getXSINamespace
 from cybertop.log import LOG
 
 class MSPLReasoner(object):
     """
     Finds the MSPLs that can be used to mitigate an attack.
     """
-
-    # The HSPL namespace.
-    NAMESPACE_HSPL = "http://security.polito.it/shield/hspl"
-    # The HSPL namespace.
-    NAMESPACE_MSPL = "http://security.polito.it/shield/mspl"
-    # The XSI namespace.
-    NAMESPACE_XSI = "http://www.w3.org/2001/XMLSchema-instance"
     
     def __init__(self, configParser, pluginManager):
         """
@@ -56,27 +52,27 @@ class MSPLReasoner(object):
         if hsplSet is None:
             return None
         
-        schema = etree.XMLSchema(etree.parse(get_mspl_xsd_path()))
+        schema = etree.XMLSchema(etree.parse(getMSPLXSDFile()))
         
-        msplSet = etree.Element("{%s}mspl-set" % self.NAMESPACE_MSPL, nsmap = {None : self.NAMESPACE_MSPL, "xsi" : self.NAMESPACE_XSI})
-                  
+        msplSet = etree.Element("{%s}mspl-set" % getMSPLNamespace(), nsmap = {None : getMSPLNamespace(), "xsi" : getXSINamespace()})
+            
         # Gather some data about the recipe.
-        msplSeverity = hsplSet.findtext("{%s}context/{%s}severity" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
-        msplType = hsplSet.findtext("{%s}context/{%s}type" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
-        msplTimestamp = hsplSet.findtext("{%s}context/{%s}timestamp" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+        msplSeverity = hsplSet.findtext("{%s}context/{%s}severity" % (getHSPLNamespace(), getHSPLNamespace()))
+        msplType = hsplSet.findtext("{%s}context/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
+        msplTimestamp = hsplSet.findtext("{%s}context/{%s}timestamp" % (getHSPLNamespace(), getHSPLNamespace()))
         
         # Adds the context.
-        context = etree.SubElement(msplSet, "{%s}context" % self.NAMESPACE_MSPL)
-        etree.SubElement(context, "{%s}severity" % self.NAMESPACE_MSPL).text = msplSeverity
-        etree.SubElement(context, "{%s}type" % self.NAMESPACE_MSPL).text = msplType
-        etree.SubElement(context, "{%s}timestamp" % self.NAMESPACE_MSPL).text = msplTimestamp
+        context = etree.SubElement(msplSet, "{%s}context" % getMSPLNamespace())
+        etree.SubElement(context, "{%s}severity" % getMSPLNamespace()).text = msplSeverity
+        etree.SubElement(context, "{%s}type" % getMSPLNamespace()).text = msplType
+        etree.SubElement(context, "{%s}timestamp" % getMSPLNamespace()).text = msplTimestamp
         
         # Finds a plug-in that can create a configured IT resource.
         [plugin, identifier] = self.__findLocation(hsplSet, landscape)
         plugin.plugin_object.setup(self.configParser)
         
         # Creates the IT resource.
-        itResource = etree.SubElement(msplSet, "{%s}it-resource" % self.NAMESPACE_MSPL, {"id" : identifier})
+        itResource = etree.SubElement(msplSet, "{%s}it-resource" % getMSPLNamespace(), {"id" : identifier})
         
         # Calls the plug-in to configure the IT resource.
         plugin.plugin_object.configureITResource(itResource, hsplSet)
@@ -104,7 +100,7 @@ class MSPLReasoner(object):
         """
         plugins = set()
         identifiers = set()
-        hsplAction = hsplSet.findtext("{%s}hspl/{%s}action" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+        hsplAction = hsplSet.findtext("{%s}hspl/{%s}action" % (getHSPLNamespace(), getHSPLNamespace()))
         for i in self.pluginManager.getPluginsOfCategory("Action"):
             pluginAction = i.details.get("Core", "Action")
             pluginCapabilities = set(re.split("\s*,\s*", i.details.get("Core", "Capabilities")))

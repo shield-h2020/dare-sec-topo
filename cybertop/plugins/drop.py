@@ -19,6 +19,7 @@ Rate limit plug-in.
 """
 
 from cybertop.plugins import ActionPlugin
+from cybertop.util import getHSPLNamespace
 
 class DropPlugin(ActionPlugin):
     """
@@ -34,13 +35,13 @@ class DropPlugin(ActionPlugin):
         
         configuration = self.createFilteringConfiguration(itResource, "accept", "FMR")
 
-        count = 1
+        count = 0
         for i in hsplSet:
-            if i.tag == "{%s}hspl" % self.NAMESPACE_HSPL:
+            if i.tag == "{%s}hspl" % getHSPLNamespace():
                 count += 1
-                subjectParts = i.findtext("{%s}subject" % self.NAMESPACE_HSPL).split(":")
-                objectParts = i.findtext("{%s}object" % self.NAMESPACE_HSPL).split(":")
-                protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+                subjectParts = i.findtext("{%s}subject" % getHSPLNamespace()).split(":")
+                objectParts = i.findtext("{%s}object" % getHSPLNamespace()).split(":")
+                protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
                 self.createFilteringRule(configuration, count, "drop", direction = "inbound", sourceAddress = objectParts[0],
-                                         sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
-                                         protocol = protocol)
+                    sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                    protocol = protocol)

@@ -1,0 +1,9 @@
+[Core]
+Name = DoS attack event parser
+Module = AttackEventParserDoS
+Attack = DoS
+
+[Documentation]
+Description = The DoS attack event parser plug-in.
+Version = 0.1
+Author = Daniele Canavese

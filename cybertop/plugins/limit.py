@@ -19,6 +19,7 @@ Rate limit plug-in.
 """
 
 from cybertop.plugins import ActionPlugin
+from cybertop.util import getHSPLNamespace
 
 class LimitPlugin(ActionPlugin):
     """
@@ -39,7 +40,7 @@ class LimitPlugin(ActionPlugin):
         
         protocols = set()
         for i in hsplSet:
-            protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+            protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
             protocols.add(protocol)    
         
         maxConnections = self.configParser.get("limit", "maxConnections", fallback = self.MAX_CONNECTIONS)
@@ -49,22 +50,22 @@ class LimitPlugin(ActionPlugin):
 
         count = 1
         for i in hsplSet:
-            if i.tag == "{%s}hspl" % self.NAMESPACE_HSPL:
+            if i.tag == "{%s}hspl" % getHSPLNamespace():
                 count += 1
-                subjectParts = i.findtext("{%s}subject" % self.NAMESPACE_HSPL).split(":")
-                objectParts = i.findtext("{%s}object" % self.NAMESPACE_HSPL).split(":")
-                protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
-                maxConnections = i.findtext("{%s}traffic-constraints/{%s}max-connections" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+                subjectParts = i.findtext("{%s}subject" % getHSPLNamespace()).split(":")
+                objectParts = i.findtext("{%s}object" % getHSPLNamespace()).split(":")
+                protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
+                maxConnections = i.findtext("{%s}traffic-constraints/{%s}max-connections" % (getHSPLNamespace(), getHSPLNamespace()))
                 if maxConnections is None:
                     maxConnections = self.configParser.get("limit", "maxConnections", fallback = self.MAX_CONNECTIONS)
-                rateLimit = i.findtext("{%s}traffic-constraints/{%s}rate-limit" % (self.NAMESPACE_HSPL, self.NAMESPACE_HSPL))
+                rateLimit = i.findtext("{%s}traffic-constraints/{%s}rate-limit" % (getHSPLNamespace(), getHSPLNamespace()))
                 if rateLimit is None:
                     rateLimit = self.configParser.get("limit", "rateLimit", fallback = self.RATE_LIMIT)
                 if protocol == "TCP":
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
-                                             sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
-                                             protocol = protocol, maxConnections = maxConnections, rateLimit = rateLimit)
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = protocol, maxConnections = maxConnections, rateLimit = rateLimit)
                 else:
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
-                                             sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
-                                             protocol = protocol)
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = protocol, rateLimit = rateLimit)
