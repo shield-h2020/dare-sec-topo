@@ -22,16 +22,15 @@ import re
 from dateutil import parser
 import os
 from lxml import etree
-from cybertop.util import get_recipes_path, get_recipe_xsd_path
+from cybertop.util import getRecipeDirectory
+from cybertop.util import getRecipeXSDFile
+from cybertop.util import getRecipeNamespace
 from cybertop.log import LOG
 
 class RecipesReasoner(object):
     """
     Finds the recipes that can be used to mitigate an attack.
     """
-
-    # The recipe namespace.
-    NAMESPACE_RECIPE = "http://security.polito.it/shield/recipe"
     
     def __init__(self, configParser, pluginManager):
         """
@@ -49,18 +48,17 @@ class RecipesReasoner(object):
         @return: The set of recipes that can mitigate the attack. It is an empty list if no recipe is available.
         @raise IOError: if a file or directory cannot be read.
         """
-        
         try:
             # Parses the XML schema.
-            schema = etree.XMLSchema(etree.parse(get_recipe_xsd_path()))
+            schema = etree.XMLSchema(etree.parse(getRecipeXSDFile()))
             parser = etree.XMLParser(schema = schema)
         
             recipes = set()
-            recipes_path = get_recipes_path()
+            recipesDirectory = getRecipeDirectory()
             # We find all the valid recipes.
-            for file in os.listdir(recipes_path):
+            for file in os.listdir(recipesDirectory):
                 if file.endswith(".xml"):
-                    path = os.path.join(recipes_path, file)
+                    path = os.path.join(recipesDirectory, file)
                     try:
                         recipeSet = etree.parse(path, parser).getroot()
                         minSeverity = int(recipeSet.attrib["minSeverity"])
@@ -74,7 +72,7 @@ class RecipesReasoner(object):
             LOG.debug("Found %s suitable recipes.", len(recipes))
             return recipes
         except FileNotFoundError:
-            raise IOError("Unable to read the recipe directory '%s'" % recipes_path)
+            raise IOError("Unable to read the recipe directory '%s'" % recipesDirectory)
         
     def __filterNonEnforceableRecipes(self, recipes, landscape):
         """
@@ -85,7 +83,7 @@ class RecipesReasoner(object):
         """
         validRecipes = set()
         for i in recipes:
-            recipeAction = i.findtext("{%s}action" % self.NAMESPACE_RECIPE)
+            recipeAction = i.findtext("{%s}action" % getRecipeNamespace())
             for j in self.pluginManager.getPluginsOfCategory("Action"):
                 pluginAction = j.details.get("Core", "Action")
                 pluginCapabilities = set(re.split("\s*,\s*", j.details.get("Core", "Capabilities")))
@@ -113,7 +111,7 @@ class RecipesReasoner(object):
         score = None
         # Picks the recipe with the highest score.
         for i in recipes:
-            recipeAction = i.findtext("{%s}action" % self.NAMESPACE_RECIPE)
+            recipeAction = i.findtext("{%s}action" % getRecipeNamespace())
             for j in self.pluginManager.getPluginsOfCategory("Action"):
                 pluginAction = j.details.get("Core", "Action")
                 pluginScore = j.details.get("Core", "Score")
@@ -138,7 +136,9 @@ class RecipesReasoner(object):
         recipes = self.__getRecipes(attack)
         recipes = self.__filterNonEnforceableRecipes(recipes, landscape)
         recipe = self.__getBestRecipe(recipes, landscape)
-
-        recipeName = recipe.findtext("{%s}name" % self.NAMESPACE_RECIPE)
-        LOG.info("Recipe '%s' chosen.", recipeName)
-        return recipe
+        if recipe is None:
+            return None
+        else:
+            recipeName = recipe.findtext("{%s}name" % getRecipeNamespace())
+            LOG.info("Recipe '%s' chosen.", recipeName)
+            return recipe

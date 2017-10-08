@@ -23,6 +23,7 @@ import os
 from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
 from cybertop.plugins import ActionPlugin
+from cybertop.plugins import AttackEventParserPlugin
 from cybertop.parsing import Parser
 from cybertop.recipes import RecipesReasoner
 from cybertop.hspl import HSPLReasoner
@@ -30,57 +31,56 @@ from cybertop.mspl import MSPLReasoner
 import pika
 from lxml import etree
 import signal
-from cybertop.util import get_plugin_impl_path
+from cybertop.util import getPluginDirectory
 from cybertop import log
 from cybertop.log import LOG
+from cybertop.util import getPIDFile
+from cybertop.util import getConfigurationFile
 
 class CyberTop(pyinotify.ProcessEvent):
     """
     The CyberSecurity Topologies main class.
     """
-    
-    # The configuration file.
-    CONFIGURATION_FILES = ["./cybertop.cfg", "/etc/cybertop.cfg", os.path.expanduser('~/.cybertop.cfg')]
-    # The pid file.
-    PID_FILE = "/tmp/cybertop.pid"
-    # The version number.
-    VERSION = "0.2"
 
-    def __init__(self, configurationFileName = None, 
-        logConfigurationFileName = None):
+    def __init__(self, configurationFileName = None, logConfigurationFileName = None):
         """
         Constructor.
         @param configurationFileName: the name of the configuration file to parse.
+        @param logConfigurationFileName: the name of the log configuration file to use.
         """
         # Configures the logging.
-
         log.load_settings(logConfigurationFileName)
         
         # Configures the configuration file parser.
         self.configParser = ConfigParser()
         if configurationFileName is None:
-            c = self.configParser.read(self.CONFIGURATION_FILES)
+            c = self.configParser.read(getConfigurationFile())
         else:
             c = self.configParser.read(configurationFileName)
         if len(c) > 0:
-            LOG.debug("Configuration file %s read.", c[0])
+            LOG.debug("Configuration file '%s' read." % c[0])
         else:
-            LOG.critical("Configuration file not read.")
-            raise IOError("Cannot read configuration file from %s.",
-                configurationFileName)
+            LOG.critical("Cannot read the configuration file from '%s'." % configurationFileName)
+            raise IOError("Cannot read the configuration file from '%s'" % configurationFileName)
 
         # Configures the plug-ins.
         self.pluginManager = PluginManager()
-        self.pluginManager.setPluginPlaces([get_plugin_impl_path()])
-        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin})
+        self.pluginManager.setPluginPlaces([getPluginDirectory()])
+        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin, "AttackEventParser" : AttackEventParserPlugin})
         self.pluginManager.collectPlugins()
+        pluginsCount = len(self.pluginManager.getPluginsOfCategory("AttackEventParser"))
+        if pluginsCount > 1:
+            LOG.debug("Found %d attack event parser plug-ins.", pluginsCount)
+        else:
+            LOG.debug("Found %d attack event parser plug-in.", pluginsCount)
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Action"))
         if pluginsCount > 1:
-            LOG.debug("Found %d plug-ins.", pluginsCount)
+            LOG.debug("Found %d action plug-ins.", pluginsCount)
         else:
-            LOG.debug("Found %d plug-in.", pluginsCount)
+            LOG.debug("Found %d action plug-in.", pluginsCount)
+        
         # Loads all the sub-modules.
-        self.parser = Parser(self.configParser)
+        self.parser = Parser(self.configParser, self.pluginManager)
         self.recipesReasoner = RecipesReasoner(self.configParser, self.pluginManager)
         self.hsplReasoner = HSPLReasoner(self.configParser, self.pluginManager)
         self.msplReasoner = MSPLReasoner(self.configParser, self.pluginManager)
@@ -129,7 +129,7 @@ class CyberTop(pyinotify.ProcessEvent):
         wm = pyinotify.WatchManager()
         notifier = pyinotify.Notifier(wm, self)
         wm.add_watch(self.configParser.get("global", "watchedDirectory"), pyinotify.IN_CREATE, rec = True, auto_add = True)
-        notifier.loop()#(daemonize = True, pid_file = self.PID_FILE)
+        notifier.loop(daemonize = True, pid_file = getPIDFile())
 
     def stop(self):
         """
@@ -161,8 +161,5 @@ class CyberTop(pyinotify.ProcessEvent):
                 with open(self.configParser.get("global", "dashboardFile"), "a") as f:
                     f.write(message)
         except:
-            LOG.critical("Error while transferring the HSPL and MSPL to dashboard")
-            raise IOError("Cannot transfer HSPL and MSPL to dashboard")
-
-
-            raise
+            LOG.critical("Error while transferring the HSPLs and MSPLs to the dashboard.")
+            raise IOError("Cannot transfer the HSPLs and MSPLs to the dashboard")

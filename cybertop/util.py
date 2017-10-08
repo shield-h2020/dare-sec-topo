@@ -13,66 +13,136 @@
 # limitations under the License.
 
 """
-Utility classes for the whole cybertop package
+Utility stuff for the whole CyberTop tool.
 
-@author: Marco De Benedictis
+@author: Marco De Benedictis, Daniele Canavese
 """
 
-import pkg_resources
+from pkg_resources import resource_filename
 
-# Global constants
-PLUGIN_IMPL_DIR_NAME = 'plugin_impl'
-XSD_DIR_NAME = 'xsd'
-RECIPES_DIR_NAME = 'recipes'
-LANDSCAPE_XSD_FILE_NAME = 'landscape.xsd'
-HSPL_XSD_FILE_NAME = 'hspl.xsd'
-MSPL_XSD_FILE_NAME = 'mspl.xsd'
-RECIPE_XSD_FILE_NAME = 'recipe.xsd'
+# The plug-in directory.
+PLUGIN_DIRECTORY = "plugins"
+# The landscape XSD file.
+LANDSCAPE_XSD_FILE = "xsd/landscape.xsd"
+# The lanscape namespace.
+LANDSCAPE_NAMESPACE = "http://security.polito.it/shield/landscape"
+# The recipes directory.
+RECIPE_DIRECTORY = "recipes"
+# The recipe XSD file.
+RECIPE_XSD_FILE = "xsd/recipe.xsd"
+# The recipes namespace.
+RECIPE_NAMESPACE = "http://security.polito.it/shield/recipe"
+# The HSPLs XSD file.
+HSPL_XSD_FILE = "xsd/hspl.xsd"
+# The HSPLs namespace.
+HSPL_NAMESPACE = "http://security.polito.it/shield/hspl"
+# The MSPLs XSD file.
+MSPL_XSD_FILE = "xsd/mspl.xsd"
+# The MSPLs namespace.
+MSPL_NAMESPACE = "http://security.polito.it/shield/mspl"
+# The XSI namespace.
+XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance"
+# The PID file.
+PID_FILE = "/tmp/cybertop.pid"
+# The configuration file.
+CONFIGURATION_FILE="/etc/cybertop.cfg"
+# The version.
+VERSION="0.2"
 
-def get_plugin_impl_path():
+def getPluginDirectory():
     """
-    Retrieve the path of the plugin implementation directory
+    Retrieve the path of the plug-ins directory.
     @return: The path of the requested directory.
     """
-    return pkg_resources.resource_filename(__name__, PLUGIN_IMPL_DIR_NAME)
+    return resource_filename(__name__, PLUGIN_DIRECTORY)
 
-def get_recipes_path():
+def getRecipeDirectory():
     """
-    Retrieve the path of the recipes directory
+    Retrieve the path of the recipes directory.
     @return: The path of the requested directory.
     """
-    return pkg_resources.resource_filename(__name__, RECIPES_DIR_NAME)
+    return resource_filename(__name__, RECIPE_DIRECTORY)
 
-def get_landscape_xsd_path():
+def getRecipeNamespace():
     """
-    Retrieve the path of the landscape XSD schema
+    Retrieve the namespace of the recipes XML.
+    @return: The namespace of the recipe XML.
+    """
+    return RECIPE_NAMESPACE
+
+def getRecipeXSDFile():
+    """
+    Retrieve the path of the recipe XSD file.
     @return: The path of the requested file.
     """
-    return pkg_resources.resource_filename(__name__,
-        '/'.join((XSD_DIR_NAME, LANDSCAPE_XSD_FILE_NAME)))
+    return resource_filename(__name__, RECIPE_XSD_FILE)
 
-def get_recipe_xsd_path():
+def getLandscapeXSDFile():
     """
-    Retrieve the path of the recipe XSD schema
+    Retrieve the path of the landscape XSD file.
     @return: The path of the requested file.
     """
-    return pkg_resources.resource_filename(__name__,
-        '/'.join((XSD_DIR_NAME, RECIPE_XSD_FILE_NAME)))
+    return resource_filename(__name__, LANDSCAPE_XSD_FILE)
 
-def get_hspl_xsd_path():
+def getLandscapeNamespace():
     """
-    Retrieve the path of the HSPL XSD schema
+    Retrieve the namespace of the landscape XML.
+    @return: The namespace of the landscape XML.
+    """
+    return LANDSCAPE_NAMESPACE
+
+def getHSPLXSDFile():
+    """
+    Retrieve the path of the HSPL XSD file.
     @return: The path of the requested file.
     """
-    return pkg_resources.resource_filename(__name__,
-        '/'.join((XSD_DIR_NAME, HSPL_XSD_FILE_NAME)))
+    return resource_filename(__name__, HSPL_XSD_FILE)
 
-def get_mspl_xsd_path():
+def getHSPLNamespace():
     """
-    Retrieve the path of the MSPL XSD schema
+    Retrieve the namespace of the HSPL XML.
+    @return: The namespace of the HSPL XML.
+    """
+    return HSPL_NAMESPACE
+
+def getMSPLXSDFile():
+    """
+    Retrieve the path of the MSPL XSD file.
     @return: The path of the requested file.
     """
-    return pkg_resources.resource_filename(__name__,
-        '/'.join((XSD_DIR_NAME, MSPL_XSD_FILE_NAME)))
+    return resource_filename(__name__, MSPL_XSD_FILE)
 
+def getMSPLNamespace():
+    """
+    Retrieve the namespace of the MSPL XML.
+    @return: The namespace of the MSPL XML.
+    """
+    return MSPL_NAMESPACE
 
+def getXSINamespace():
+    """
+    Retrieve the namespace of the XSI XML.
+    @return: The namespace of the XSI XML.
+    """
+    return XSI_NAMESPACE
+
+def getPIDFile():
+    """
+    Retrieve the path of the PID file.
+    @return: The path of the requested file.
+    """
+    return PID_FILE
+
+def getConfigurationFile():
+    """
+    Retrieve the path of the configuration file.
+    @return: The path of the requested file.
+    """
+    return CONFIGURATION_FILE
+
+def getVersion():
+    """
+    Retrieve the version number.
+    @return: The version number.
+    """
+    return VERSION

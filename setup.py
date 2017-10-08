@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='cybertop',
 
-    version='0.2',
+    version='0.3',
 
     description='Cybersecurity Topologies module (SHIELD)',
     long_description=long_description,

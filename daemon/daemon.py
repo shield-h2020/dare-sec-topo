@@ -16,13 +16,14 @@
 """
 The CyberSecurity Topologies daemon app
 
-@author: Marco De Benedictis
+@author: Marco De Benedictis, Daniele Canavese
 """
 
 import argparse
 from cybertop.log import LOG
 from cybertop.cybertop import CyberTop
-
+from cybertop.util import getConfigurationFile
+from cybertop.util import getVersion
 
 class CyberTopDaemon(object):
     """Main application.
@@ -43,15 +44,15 @@ class CyberTopDaemon(object):
             "--version",
             help="Package's version",
             action='version',
-            version='%(prog)s 0.1'
+            version='%(prog)s %s' % getVersion()
         )
         p.add_argument(
             "-c",
             "--conf",
             dest='conf',
             metavar="FILE",
-            default="./cybertop.cfg",
-			required=True,
+            default=getConfigurationFile(),
+			required = True,
             help="Specifies the app configuration file"
         )
         p.add_argument(
@@ -60,7 +61,7 @@ class CyberTopDaemon(object):
             dest='log_conf',
             metavar="FILE",
             default="./logging.ini",
-			required=True,
+			required = True,
             help="Specifies the logging configuration file"
         )
         
