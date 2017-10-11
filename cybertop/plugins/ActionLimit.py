@@ -21,7 +21,7 @@ Rate limit plug-in.
 from cybertop.plugins import ActionPlugin
 from cybertop.util import getHSPLNamespace
 
-class LimitPlugin(ActionPlugin):
+class ActionLimit(ActionPlugin):
     """
     Translates an IT resource to perform the rate limiting of some packets.
     """

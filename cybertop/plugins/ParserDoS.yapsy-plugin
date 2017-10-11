@@ -1,6 +1,6 @@
 [Core]
 Name = DoS attack event parser
-Module = AttackEventParserDoS
+Module = ParserDoS
 Attack = DoS
 
 [Documentation]

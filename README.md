@@ -1,4 +1,4 @@
-# CyberSecurity Topologies v0.3
+# CyberSecurity Topologies v0.4
 
 Welcome to the DARE's CyberSecurity Topologies tool page.
 
@@ -17,12 +17,16 @@ This project includes a Python module, named `cybertop`, and a sample applicatio
 │   ├── mspl.py
 │   ├── parsing.py
 │   ├── plugins
-│   │   ├── AttackEventParserDoS.py
-│   │   ├── AttackEventParserDoS.yapsy-plugin
-│   │   ├── drop.py
-│   │   ├── drop.yapsy-plugin
-│   │   ├── limit.py
-│   │   ├── limit.yapsy-plugin
+│   │   ├── ActionDrop.py
+│   │   ├── ActionDrop.yapsy-plugin
+│   │   ├── ActionLimit.py
+│   │   ├── ActionLimit.yapsy-plugin
+│   │   ├── FilterInputBytes.py
+│   │   ├── FilterInputBytes.yapsy-plugin
+│   │   ├── FilterInputPackets.py
+│   │   ├── FilterInputPackets.yapsy-plugin
+│   │   ├── ParserDoS.py
+│   │   ├── ParserDoS.yapsy-plugin
 │   ├── plugins.py
 │   ├── recipes
 │   │   ├── DoS, high.xml

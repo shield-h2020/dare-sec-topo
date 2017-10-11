@@ -20,10 +20,8 @@ CSV parsing & co.
 
 import ntpath
 import re
-from dateutil import parser
-import ipaddress
 from lxml import etree
-from cybertop.attacks import Attack, AttackEvent
+from cybertop.attacks import Attack
 from cybertop.util import getLandscapeXSDFile
 from cybertop.util import getLandscapeNamespace
 from cybertop.log import LOG
@@ -76,7 +74,7 @@ class Parser(object):
 
         # Finds a suitable parser.
         plugin = None
-        for i in self.pluginManager.getPluginsOfCategory("AttackEventParser"):
+        for i in self.pluginManager.getPluginsOfCategory("Parser"):
             pluginAttack = i.details.get("Core", "Attack")
             if pluginAttack == attackType:
                 plugin = i

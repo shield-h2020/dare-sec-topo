@@ -68,9 +68,35 @@ class HSPLReasoner(object):
         etree.SubElement(context, "{%s}type" % getHSPLNamespace()).text = attack.type
         etree.SubElement(context, "{%s}timestamp" % getHSPLNamespace()).text = attack.getTimestamp().isoformat()
         
+        # Filters the events.
+        events = []
+        recipeFilters = recipe.find("{%s}filters" % getRecipeNamespace())
+        evaluation = "or"
+        if recipeFilters is None:
+            events = attack.events
+        else:
+            if "evaluation" in recipeFilters.attrib.keys():
+                evaluation = recipeFilters.attrib["evaluation"]
+            for j in self.pluginManager.getPluginsOfCategory("Filter"):
+                pluginTag = j.details.get("Core", "Tag")
+                filterValues = recipeFilters.findall("{%s}%s" % (getRecipeNamespace(), pluginTag))
+                for k in attack.events:
+                    if evaluation == "or":
+                        test = False
+                    else:
+                        test = True
+                    for l in filterValues:
+                        t = j.plugin_object.filter(l.text, k)
+                        if evaluation == "or":
+                            test = test or t
+                        else:
+                            test = test and t
+                    if test:
+                        events.append(k)
+                
         # Adds an HSPL for each event.
         count = 0
-        for i in attack.events:
+        for i in events:
             count += 1
             hspl = etree.SubElement(hsplSet, "{%s}hspl" % getHSPLNamespace())
             etree.SubElement(hspl, "{%s}name" % getHSPLNamespace()).text = "%s #%d" % (recipeName, count)
@@ -89,14 +115,12 @@ class HSPLReasoner(object):
                 etree.SubElement(trafficConstraints, "{%s}rate-limit" % getHSPLNamespace()).text = recipeRateLimit
         
         if schema.validate(hsplSet):
-            hsplCount = len(hsplSet.getchildren())
+            hsplCount = len(hsplSet.getchildren()) - 1
             if hsplCount == 1:
                 LOG.info("%d HSPL generated.", hsplCount)
             else:
                 LOG.info("%d HSPLs generated.", hsplCount)
-            
             LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
-            
             return hsplSet
         
         else:

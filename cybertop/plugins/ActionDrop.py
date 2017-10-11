@@ -21,7 +21,7 @@ Rate limit plug-in.
 from cybertop.plugins import ActionPlugin
 from cybertop.util import getHSPLNamespace
 
-class DropPlugin(ActionPlugin):
+class ActionDrop(ActionPlugin):
     """
     Translates an IT resource to perform the dropping of some packets.
     """
