@@ -14,16 +14,16 @@
 import re
 
 """
-Input bytes filter plug-in.
+Input packets filter plug-in.
 
 @author: Daniele Canavese
 """
 
 from cybertop.plugins import FilterPlugin
 
-class FilterInputBytes(FilterPlugin):
+class FilterQueryDigits(FilterPlugin):
     """
-    Filters an attack event based on the input bytes.
+    Filters an attack event based on the query digits.
     """
     
     def filter(self, value, attackEvent):
@@ -33,22 +33,22 @@ class FilterInputBytes(FilterPlugin):
         @param attackEvent: The attack event to analyze.
         @return: True if the event must be accepted, False if the event must be discarded.
         """
-        inputBytes = attackEvent.fields["inputBytes"]
+        queryDigits = sum(c.isdigit() for c in attackEvent.fields["query"])
         groups = re.findall("(==|!=|<|<=|>|>=)(\d+)", value)
         relationship = groups[0][0]
         number = int(groups[0][1])
-        
-        if relationship == "==" and inputBytes == number:
+
+        if relationship == "==" and queryDigits == number:
             return True
-        elif relationship == "!=" and inputBytes != number:
+        elif relationship == "!=" and queryDigits != number:
             return True
-        elif relationship == "<" and inputBytes < number:
+        elif relationship == "<" and queryDigits < number:
             return True
-        elif relationship == "<=" and inputBytes <= number:
+        elif relationship == "<=" and queryDigits <= number:
             return True
-        elif relationship == ">" and inputBytes > number:
+        elif relationship == ">" and queryDigits > number:
             return True
-        elif relationship == ">=" and inputBytes >= number:
+        elif relationship == ">=" and queryDigits >= number:
             return True
         else:
             return False

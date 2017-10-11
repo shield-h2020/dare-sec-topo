@@ -23,7 +23,7 @@ from cybertop.plugins import FilterPlugin
 
 class FilterInputPackets(FilterPlugin):
     """
-    Parses a DoS attack event.
+    Filters an attack event based on the input packets.
     """
     
     def filter(self, value, attackEvent):

@@ -1,0 +1,9 @@
+[Core]
+Name = DNS tunneling attack event parser
+Module = ParserDNSTunneling
+Attack = DNS tunneling
+
+[Documentation]
+Description = The DNS tunneling attack event parser plug-in.
+Version = 0.1
+Author = Daniele Canavese

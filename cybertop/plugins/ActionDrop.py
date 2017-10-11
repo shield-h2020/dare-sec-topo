@@ -38,10 +38,20 @@ class ActionDrop(ActionPlugin):
         count = 0
         for i in hsplSet:
             if i.tag == "{%s}hspl" % getHSPLNamespace():
-                count += 1
                 subjectParts = i.findtext("{%s}subject" % getHSPLNamespace()).split(":")
                 objectParts = i.findtext("{%s}object" % getHSPLNamespace()).split(":")
                 protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
-                self.createFilteringRule(configuration, count, "drop", direction = "inbound", sourceAddress = objectParts[0],
-                    sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
-                    protocol = protocol)
+                if protocol == "TCP+UDP":
+                    count += 1
+                    self.createFilteringRule(configuration, count, "drop", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = "TCP")
+                    count += 1
+                    self.createFilteringRule(configuration, count, "drop", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = "UDP")
+                else:
+                    count += 1
+                    self.createFilteringRule(configuration, count, "drop", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = protocol)

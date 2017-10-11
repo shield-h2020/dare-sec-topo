@@ -108,6 +108,7 @@ class RecipesReasoner(object):
         @return: The recipes that can be enforced. It can be an empty list.
         """
         validRecipes = set()
+
         for i in recipes:
             recipeFilters = i.find("{%s}filters" % getRecipeNamespace())
             evaluation = "or"
@@ -116,24 +117,24 @@ class RecipesReasoner(object):
             else:
                 if "evaluation" in recipeFilters.attrib.keys():
                     evaluation = recipeFilters.attrib["evaluation"]
-                for j in self.pluginManager.getPluginsOfCategory("Filter"):
-                    pluginTag = j.details.get("Core", "Tag")
-                    filterValues = recipeFilters.findall("{%s}%s" % (getRecipeNamespace(), pluginTag))
-                    for k in attack.events:
-                        if evaluation == "or":
-                            test = False
-                        else:
-                            test = True
+                for j in attack.events:
+                    if evaluation == "or":
+                        test = False
+                    else:
+                        test = True
+                    for k in self.pluginManager.getPluginsOfCategory("Filter"):
+                        pluginTag = k.details.get("Core", "Tag")
+                        filterValues = recipeFilters.findall("{%s}%s" % (getRecipeNamespace(), pluginTag))
                         for l in filterValues:
-                            t = j.plugin_object.filter(l.text, k)
+                            t = k.plugin_object.filter(l.text, j)
                             if evaluation == "or":
                                 test = test or t
                             else:
                                 test = test and t
-                        if test:
-                            validRecipes.add(i)
-                            break
-        
+                    if test:
+                        validRecipes.add(i)
+                        break
+
         tooStrict = len(recipes) - len(validRecipes)
         if tooStrict == 1:
             LOG.debug("Removed %d too strict recipe, %d remaining.", tooStrict, len(validRecipes))

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<recipe-set minSeverity="1" maxSeverity="4" type="DNS tunneling"
+	xmlns="http://security.polito.it/shield/recipe" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://security.polito.it/shield/recipe ../xsd/recipe.xsd ">
+
+	<recipe>
+		<name>drop packets</name>
+		<action>drop</action>
+		<traffic-constraints>
+			<type>TCP+UDP</type>
+		</traffic-constraints>
+		<filters evaluation="and">
+			<query-length>&lt;=63</query-length>
+			<query-digits>&lt;=14</query-digits>
+		</filters>
+	</recipe>
+
+</recipe-set>

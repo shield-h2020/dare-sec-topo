@@ -51,7 +51,6 @@ class ActionLimit(ActionPlugin):
         count = 1
         for i in hsplSet:
             if i.tag == "{%s}hspl" % getHSPLNamespace():
-                count += 1
                 subjectParts = i.findtext("{%s}subject" % getHSPLNamespace()).split(":")
                 objectParts = i.findtext("{%s}object" % getHSPLNamespace()).split(":")
                 protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
@@ -61,11 +60,22 @@ class ActionLimit(ActionPlugin):
                 rateLimit = i.findtext("{%s}traffic-constraints/{%s}rate-limit" % (getHSPLNamespace(), getHSPLNamespace()))
                 if rateLimit is None:
                     rateLimit = self.configParser.get("limit", "rateLimit", fallback = self.RATE_LIMIT)
-                if protocol == "TCP":
+                if protocol == "TCP+UDP":
+                    count += 1
+                    self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = "TCP", maxConnections = maxConnections, rateLimit = rateLimit)
+                    count += 1
+                    self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = "UDP", rateLimit = rateLimit)
+                elif protocol == "TCP":
+                    count += 1
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
                         sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
                         protocol = protocol, maxConnections = maxConnections, rateLimit = rateLimit)
                 else:
+                    count += 1
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
                         sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
                         protocol = protocol, rateLimit = rateLimit)
