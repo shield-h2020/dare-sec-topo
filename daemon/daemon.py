@@ -1,12 +1,12 @@
 #
 # Copyright 2017 Politecnico di Torino
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,14 @@ from cybertop.log import LOG
 from cybertop.cybertop import CyberTop
 from cybertop.util import getConfigurationFile
 from cybertop.util import getVersion
+
+
+def start(args):
+    """Start action of the daemon
+    """
+    cybertop = CyberTop(args.conf, args.log_conf)
+    cybertop.start(not args.interactive)
+
 
 class CyberTopDaemon(object):
     """Main application.
@@ -44,7 +52,7 @@ class CyberTopDaemon(object):
             "--version",
             help="Package's version",
             action='version',
-            version='%(prog)s %s' % getVersion()
+            version='%(prog)s ' + getVersion()
         )
         p.add_argument(
             "-c",
@@ -52,7 +60,7 @@ class CyberTopDaemon(object):
             dest='conf',
             metavar="FILE",
             default=getConfigurationFile(),
-			required = True,
+            required=True,
             help="Specifies the app configuration file"
         )
         p.add_argument(
@@ -61,14 +69,19 @@ class CyberTopDaemon(object):
             dest='log_conf',
             metavar="FILE",
             default="./logging.ini",
-			required = True,
+            required=True,
             help="Specifies the logging configuration file"
         )
-        
+
+        p.add_argument(
+            "-i",
+            "--interactive",
+            action='store_true'
+        )
+
         args = p.parse_args()
-        
-        cybertop = CyberTop(args.conf, args.log_conf)
-        cybertop.start()
+
+        start(args)
 
 
 if __name__ == "__main__":
