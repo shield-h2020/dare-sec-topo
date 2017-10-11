@@ -1,6 +1,6 @@
 [Core]
 Name = Drop action
-Module = drop
+Module = ActionDrop
 Capabilities = filtering.basic
 Action = drop
 Score = 1

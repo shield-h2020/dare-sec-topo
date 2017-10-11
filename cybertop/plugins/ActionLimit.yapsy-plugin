@@ -1,6 +1,6 @@
 [Core]
 Name = Limit action
-Module = limit
+Module = ActionLimit
 Capabilities = filtering.basic, filtering.limit
 Action = limit
 Score = 100

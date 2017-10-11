@@ -23,7 +23,7 @@ from lxml import etree
 from cybertop.util import getMSPLNamespace
 from cybertop.util import getXSINamespace
 
-class AttackEventParserPlugin(IPlugin):
+class ParserPlugin(IPlugin):
     """
     A plug-in for parsing an attack event.
     """
@@ -43,6 +43,27 @@ class AttackEventParserPlugin(IPlugin):
         @param line: The line to parse.
         @return: The attack event or None if this line should be silently ignored.
         @raise IOError: if the line contains something invalid.
+        """
+        raise NotImplementedError()
+
+class FilterPlugin(IPlugin):
+    """
+    A plug-in for filtering an attack event.
+    """
+
+    def setup(self, configParser):
+        """
+        Initializes the plug-in. Always called after the construction.
+        @param configParser: The configuration parser.
+        """
+        self.configParser = configParser
+
+    def filter(self, value, attackEvent):
+        """
+        Filters an attack event.
+        @param value: The optional value for the filter.
+        @param attackEvent: The attack event to analyze.
+        @return: True if the event must be accepted, False if the event must be discarded.
         """
         raise NotImplementedError()
 

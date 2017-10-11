@@ -24,7 +24,7 @@ sys.path.append("..")
 #from cybertop.cybertop import CyberTop
 from cybertop.util import getHSPLNamespace
 import unittest
-import cybertop
+from cybertop.cybertop import CyberTop
 import os
 
 def getTestFilePath(filename):
@@ -48,22 +48,19 @@ class TestDoS(unittest.TestCase):
         @param expectedProtocols: The expected protocol list.
         @param expectedActions: The expected actions list.
         """
-        a = getHSPLNamespace()
-        pass
-#         cyberTop = CyberTop(getTestFilePath("cybertop.cfg"), getTestFilePath("logging.ini"))
-# 
-#         # Chooses drop.
-#         r = cyberTop.getMSPLs(getTestFilePath(attackFile), getTestFilePath(landscapeFile))
-#         self.assertIsNotNone(r)
-#         [hsplSet, _] = r
-#         protocols = hsplSet.findall("{%s}hspl/{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace(), getHSPLNamespace()))
-#         self.assertEqual(len(protocols), len(expectedProtocols))
-#         for i in range(len(protocols)):
-#             self.assertEqual(protocols[i].text, expectedProtocols[i])
-#         actions = hsplSet.findall("{%s}hspl/{%s}action" % (getHSPLNamespace(), getHSPLNamespace()))
-#         self.assertEqual(len(actions), len(expectedActions))
-#         for i in range(len(actions)):
-#             self.assertEqual(actions[i].text, expectedActions[i])
+        cyberTop = CyberTop(getTestFilePath("cybertop.cfg"), getTestFilePath("logging.ini"))
+ 
+        r = cyberTop.getMSPLs(getTestFilePath(attackFile), getTestFilePath(landscapeFile))
+        self.assertIsNotNone(r)
+        [hsplSet, _] = r
+        protocols = hsplSet.findall("{%s}hspl/{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace(), getHSPLNamespace()))
+        self.assertEqual(len(protocols), len(expectedProtocols))
+        for i in range(len(protocols)):
+            self.assertEqual(protocols[i].text, expectedProtocols[i])
+        actions = hsplSet.findall("{%s}hspl/{%s}action" % (getHSPLNamespace(), getHSPLNamespace()))
+        self.assertEqual(len(actions), len(expectedActions))
+        for i in range(len(actions)):
+            self.assertEqual(actions[i].text, expectedActions[i])
     
     def test_veryHighTCP(self):
         """

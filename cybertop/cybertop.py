@@ -23,7 +23,8 @@ import os
 from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
 from cybertop.plugins import ActionPlugin
-from cybertop.plugins import AttackEventParserPlugin
+from cybertop.plugins import ParserPlugin
+from cybertop.plugins import FilterPlugin
 from cybertop.parsing import Parser
 from cybertop.recipes import RecipesReasoner
 from cybertop.hspl import HSPLReasoner
@@ -66,13 +67,18 @@ class CyberTop(pyinotify.ProcessEvent):
         # Configures the plug-ins.
         self.pluginManager = PluginManager()
         self.pluginManager.setPluginPlaces([getPluginDirectory()])
-        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin, "AttackEventParser" : AttackEventParserPlugin})
+        self.pluginManager.setCategoriesFilter({"Action" : ActionPlugin, "Parser" : ParserPlugin, "Filter" : FilterPlugin})
         self.pluginManager.collectPlugins()
-        pluginsCount = len(self.pluginManager.getPluginsOfCategory("AttackEventParser"))
+        pluginsCount = len(self.pluginManager.getPluginsOfCategory("Parser"))
         if pluginsCount > 1:
             LOG.debug("Found %d attack event parser plug-ins.", pluginsCount)
         else:
             LOG.debug("Found %d attack event parser plug-in.", pluginsCount)
+        pluginsCount = len(self.pluginManager.getPluginsOfCategory("Filter"))
+        if pluginsCount > 1:
+            LOG.debug("Found %d attack event filter plug-ins.", pluginsCount)
+        else:
+            LOG.debug("Found %d attack event filter plug-in.", pluginsCount)
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Action"))
         if pluginsCount > 1:
             LOG.debug("Found %d action plug-ins.", pluginsCount)

@@ -18,14 +18,14 @@ DoS attack events parser plug-in.
 @author: Daniele Canavese
 """
 
-from cybertop.plugins import AttackEventParserPlugin
+from cybertop.plugins import ParserPlugin
 from cybertop.attacks import AttackEvent
 import re
 from cybertop.log import LOG
 from dateutil import parser
 import ipaddress
 
-class AttackEventParserDoS(AttackEventParserPlugin):
+class ParserDoS(ParserPlugin):
     """
     Parses a DoS attack event.
     """
