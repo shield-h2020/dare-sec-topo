@@ -47,6 +47,7 @@ limitations under the License.
 				<simpleType>
 					<restriction base="string">
 						<enumeration value="DoS" />
+						<enumeration value="DNS tunneling" />
 					</restriction>
 				</simpleType>
 			</element>
@@ -139,6 +140,11 @@ limitations under the License.
 						<enumeration value="UDP">
 							<annotation>
 								<documentation>The UDP protocol.</documentation>
+							</annotation>
+						</enumeration>
+						<enumeration value="TCP+UDP">
+							<annotation>
+								<documentation>The TCP and UDP protocols.</documentation>
 							</annotation>
 						</enumeration>
 					</restriction>

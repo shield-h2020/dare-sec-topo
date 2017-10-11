@@ -77,22 +77,22 @@ class HSPLReasoner(object):
         else:
             if "evaluation" in recipeFilters.attrib.keys():
                 evaluation = recipeFilters.attrib["evaluation"]
-            for j in self.pluginManager.getPluginsOfCategory("Filter"):
-                pluginTag = j.details.get("Core", "Tag")
-                filterValues = recipeFilters.findall("{%s}%s" % (getRecipeNamespace(), pluginTag))
-                for k in attack.events:
-                    if evaluation == "or":
-                        test = False
-                    else:
-                        test = True
-                    for l in filterValues:
-                        t = j.plugin_object.filter(l.text, k)
+            for i in attack.events:
+                if evaluation == "or":
+                    test = False
+                else:
+                    test = True
+                for j in self.pluginManager.getPluginsOfCategory("Filter"):
+                    pluginTag = j.details.get("Core", "Tag")
+                    filterValues = recipeFilters.findall("{%s}%s" % (getRecipeNamespace(), pluginTag))
+                    for k in filterValues:
+                        t = j.plugin_object.filter(k.text, i)
                         if evaluation == "or":
                             test = test or t
                         else:
                             test = test and t
-                    if test:
-                        events.append(k)
+                if test:
+                    events.append(i)
                 
         # Adds an HSPL for each event.
         count = 0
