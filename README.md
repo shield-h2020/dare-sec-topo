@@ -25,10 +25,17 @@ This project includes a Python module, named `cybertop`, and a sample applicatio
 │   │   ├── FilterInputBytes.yapsy-plugin
 │   │   ├── FilterInputPackets.py
 │   │   ├── FilterInputPackets.yapsy-plugin
+│   │   ├── FilterQueryDigits.py
+│   │   ├── FilterQueryDigits.yapsy-plugin
+│   │   ├── FilterQueryLength.py
+│   │   ├── FilterQueryLength.yapsy-plugin
+│   │   ├── ParserDNSTunneling.py
+│   │   ├── ParserDNSTunneling.yapsy-plugin
 │   │   ├── ParserDoS.py
 │   │   ├── ParserDoS.yapsy-plugin
 │   ├── plugins.py
 │   ├── recipes
+│   │   ├── DNS tunneling.xml
 │   │   ├── DoS, high.xml
 │   │   └── DoS, low.xml
 │   ├── recipes.py
@@ -50,21 +57,25 @@ This project includes a Python module, named `cybertop`, and a sample applicatio
 ├── README.md
 ├── setup.py
 └── tests
+    ├── __init__.py
     ├── cybertop.cfg
-    ├── CyberTopSimpleTests.py
+    ├── High-DNS tunneling-1.csv
     ├── High-DoS-1.csv
     ├── High-DoS-2.csv
     ├── High-DoS-3.csv
-    ├── __init__.py
     ├── landscape1.xml
     ├── landscape2.xml
     ├── logging.ini
+    ├── Low-DNS tunneling-1.csv
     ├── Low-DoS-1.csv
     ├── Low-DoS-2.csv
     ├── Low-DoS-3.csv
+    ├── test_cybertop.py
+    ├── Very high-DNS tunneling-1.csv
     ├── Very high-DoS-1.csv
     ├── Very high-DoS-2.csv
     ├── Very high-DoS-3.csv
+    ├── Very low-DNS tunneling-1.csv
     ├── Very low-DoS-1.csv
     ├── Very low-DoS-2.csv
     └── Very low-DoS-3.csv
