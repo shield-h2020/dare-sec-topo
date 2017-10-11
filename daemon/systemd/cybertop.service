@@ -5,8 +5,7 @@ After=multi-user.target
 [Service]
 EnvironmentFile=-/etc/default/cybertop
 ExecStart=/usr/local/bin/cybertop-daemon -c $CYBERTOP_CONF -l $CYBERTOP_LOG_CONF
-KillMode=process
-Type=idle
+Type=simple
 
 [Install]
 WantedBy=multi-user.target
