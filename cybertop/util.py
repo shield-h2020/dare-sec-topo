@@ -47,7 +47,7 @@ PID_FILE = "/tmp/cybertop.pid"
 # The configuration file.
 CONFIGURATION_FILE="/etc/cybertop.cfg"
 # The version.
-VERSION="0.2"
+VERSION="0.5"
 
 def getPluginDirectory():
     """
