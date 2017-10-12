@@ -100,9 +100,9 @@ class HSPLReasoner(object):
             count += 1
             hspl = etree.SubElement(hsplSet, "{%s}hspl" % getHSPLNamespace())
             etree.SubElement(hspl, "{%s}name" % getHSPLNamespace()).text = "%s #%d" % (recipeName, count)
-            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = i.attacker
+            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = i.target
             etree.SubElement(hspl, "{%s}action" % getHSPLNamespace()).text = recipeAction
-            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = i.target
+            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = i.attacker
             trafficConstraints = etree.SubElement(hspl, "{%s}traffic-constraints" % getHSPLNamespace())
             if recipeType is not None:
                 eventType = recipeType
