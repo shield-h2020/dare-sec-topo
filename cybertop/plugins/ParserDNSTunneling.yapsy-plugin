@@ -2,6 +2,7 @@
 Name = DNS tunneling attack event parser
 Module = ParserDNSTunneling
 Attack = DNS tunneling
+FileName = dns_results
 
 [Documentation]
 Description = The DNS tunneling attack event parser plug-in.
