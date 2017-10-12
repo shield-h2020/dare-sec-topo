@@ -55,28 +55,28 @@ class Parser(object):
         
         # Second: checks the file name format.
         match = re.match("^(Very Low|Very low|very low|Low|low|High|high|Very High|Very high|high)-(.+)?-(\d+)\.csv$", os.path.basename(fileName))
-        if not match:
-            LOG.critical("The file '%s' has an invalid name.", fileName)
-            raise IOError("The file '%s' has an invalid name." % fileName)
-        
-        # Retrieves the severity, the attack type and the identifier.
-        severity = match.group(1).lower()
-        if severity == "very low":
-            severity = 1
-        elif severity == "low":
-            severity = 2
-        elif severity == "high":
-            severity = 3
+        if match:
+            severity = match.group(1).lower()
+            if severity == "very low":
+                severity = 1
+            elif severity == "low":
+                severity = 2
+            elif severity == "high":
+                severity = 3
+            else:
+                severity = 4
+            attackType = match.group(2)
+            identifier = int(match.group(3))
         else:
             severity = 4
-        attackType = match.group(2)
-        identifier = int(match.group(3))
+            attackType = os.path.splitext(fileName)[0]
+            identifier = None
 
         # Finds a suitable parser.
         plugin = None
         for i in self.pluginManager.getPluginsOfCategory("Parser"):
-            pluginAttack = i.details.get("Core", "Attack")
-            if pluginAttack == attackType:
+            pluginAttack = i.details.get("Core", "FileName")
+            if re.match(pluginAttack, attackType):
                 plugin = i
                 break
         if plugin is None:
