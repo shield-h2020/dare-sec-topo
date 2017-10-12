@@ -188,8 +188,8 @@ class TestDNSTunneling(BasicTest):
         """
         Tests the DNS tunneling, no severity.
         """
-        self._doHSPLTest("dns_results.csv", "landscape1.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop"])
-        self._doHSPLTest("dns_results.csv", "landscape2.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop"])
+        self._doHSPLTest("dns_results.csv", "landscape1.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
+        self._doHSPLTest("dns_results.csv", "landscape2.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
 
 if __name__ == "__main__":
     unittest.main()
