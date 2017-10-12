@@ -162,7 +162,13 @@ class CyberTop(pyinotify.ProcessEvent):
             hsplString = etree.tostring(hsplSet).decode()
             msplString = etree.tostring(msplSet).decode()
 
-            message = hsplString + msplString
+            content = self.configParser.get("global", "dashboardContent")
+            if content == "HSPL":
+                message = hsplString
+            elif content == "MSPL":
+                message = msplString
+            else:
+                message = hsplString + msplString
 
             # Sends everything to RabbitMQ.
             if self.channel is not None:
