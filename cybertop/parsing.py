@@ -75,8 +75,8 @@ class Parser(object):
         # Finds a suitable parser.
         plugin = None
         for i in self.pluginManager.getPluginsOfCategory("Parser"):
-            pluginAttack = i.details.get("Core", "FileName")
-            if re.match(pluginAttack, attackType):
+            pluginFileName = i.details.get("Core", "FileName")
+            if re.match(pluginFileName, attackType):
                 plugin = i
                 break
         if plugin is None:
@@ -84,6 +84,7 @@ class Parser(object):
             raise IOError("No suitable attack event parser found")
 
         # Creates an attack object.
+        attackType = plugin.details.get("Core", "Attack")
         attack = Attack(severity, attackType, identifier)
                 
         # Opens the file and read the events.
