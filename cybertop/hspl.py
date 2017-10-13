@@ -159,6 +159,12 @@ class HSPLReasoner(object):
             hspls.remove(i)
             hsplSet.remove(i)
         
+        # Pass 2 merge the HSPLs, if needed.
+        hsplMergingThreshold = self.configParser.get("global", "hsplMergingThreshold")
+        hsplMergingMinBits = self.configParser.get("global", "hsplMergingMinBits")
+        hsplMergingMaxBits = self.configParser.get("global", "hsplMergingMaxBits")
+        
+        
         return hsplSet
 
     def __checkIncludedHSPLs(self, hspl1, hspl2):
