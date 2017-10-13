@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from reportlab.platypus import para
 """
 HSPL and stuff.
 
@@ -25,6 +26,8 @@ from cybertop.util import getXSINamespace
 from cybertop.log import LOG
 import re
 import copy
+from ipaddress import ip_address
+from ipaddress import ip_network
 
 class HSPLReasoner(object):
     """
@@ -163,7 +166,7 @@ class HSPLReasoner(object):
             LOG.debug("%d included HSPL removed.", len(includedHSPLs))
         elif len(includedHSPLs) > 1:
             LOG.debug("%d included HSPLs removed.", len(includedHSPLs))
-        
+         
         # Pass 2: merges the IP address using * as the port number.
         mergedHSPLs = set()
         if len(hspls) > hsplMergingThreshold:
@@ -189,10 +192,39 @@ class HSPLReasoner(object):
             LOG.debug("%d HSPLs merged using any ports.", len(mergedHSPLs))
         
         # Pass 3: merges the HSPLs, if needed.
-#         bits = hsplMergingMinBits
-#         while len(hspls) > hsplMergingThreshold or bits > hsplMergingMaxBits:
-#             bits += 1
+        mergedHSPLs = set()
+        bits = 32 - hsplMergingMinBits
+        while len(hspls) - len(mergedHSPLs) > hsplMergingThreshold and bits <= 32 - hsplMergingMaxBits:
+            for i in range(0, len(hspls) - 1):
+                hspl1 = hspls[i]
+                object1 = hspl1.find("{%s}object" % getHSPLNamespace())
+                newHSPL = copy.deepcopy(hspl1)
+                newObject = newHSPL.find("{%s}object" % getHSPLNamespace())
+                m1 = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", newObject.text)
+                if m1:
+                    address1 = "%s/%d" % (ip_address((int(ip_network(m1.group(1)).network_address) >> bits) << bits), 32 - bits)
+                    port1 = m1.group(4)
+                    for j in range(i + 1, len(hspls)):
+                        hspl2 = hspls[j]
+                        newObject.text = "%s:%s" % (address1, port1)
+                        if self.__checkIncludedHSPLs(newHSPL, hspl2):
+                            object1.text = newObject.text
+                            mergedHSPLs.add(hspl2)
+            bits += 1
+        for i in mergedHSPLs:
+            hspls.remove(i)
+            hsplSet.remove(i)
+        if len(mergedHSPLs) == 1:
+            LOG.debug("%d HSPL merged using subnets.", len(mergedHSPLs))
+        elif len(mergedHSPLs) > 1:
+            LOG.debug("%d HSPLs merged using subnets.", len(mergedHSPLs))
         
+        hsplCount = len(hsplSet.getchildren()) - 1
+        if hsplCount == 1:
+            LOG.info("%d HSPL remaining.", hsplCount)
+        else:
+            LOG.info("%d HSPLs remaining.", hsplCount)
+
         return hsplSet
 
     def __checkIncludedHSPLs(self, hspl1, hspl2):
@@ -211,15 +243,17 @@ class HSPLReasoner(object):
         trafficConstraints1 = hspl1.find("{%s}traffic-constraints" % getHSPLNamespace())
         trafficConstraints2 = hspl2.find("{%s}traffic-constraints" % getHSPLNamespace())
 
-        m1 = re.match("(\d+\.\d+\.\d+\.\d+)(:(\d+|\*|any))?", object1)
-        m2 = re.match("(\d+\.\d+\.\d+\.\d+)(:(\d+|\*|any))?", object2)
+        m1 = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", object1)
+        m2 = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", object2)
         objectCheck = False
         if m1 and m2:
-            address1 = m1.group(1)
-            address2 = m2.group(1)
-            port1 = m1.group(3)
-            port2 = m2.group(3)
-            if address1 == address2 and (port1 == port2 or port1 == "*" or port1 == "any"):
+            address1 = ip_network(m1.group(1))
+            address2 = ip_network(m2.group(1))
+            n1 = int(address1.network_address) >> (32 - address1.prefixlen)
+            n2 = int(address2.network_address) >> (32 - address1.prefixlen)
+            port1 = m1.group(4)
+            port2 = m2.group(4)
+            if n1 == n2 and (port1 == port2 or port1 == "*" or port1 == "any"):
                 objectCheck = True
 
         if subject1 == subject2 and action1 == action2 and objectCheck and self.__checkEqualXML(trafficConstraints1, trafficConstraints2):
