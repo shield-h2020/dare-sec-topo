@@ -158,6 +158,13 @@ class TestDoS(BasicTest):
         self._doHSPLTest("Very low-DoS-4.csv", "landscape1.xml", ["TCP"], ["limit"])
         self._doHSPLTest("Very low-DoS-4.csv", "landscape2.xml", ["TCP"], ["drop"])
 
+    def test_hsplMerging2(self):
+        """
+        Tests the HSPL merging, test #2.
+        """
+        self._doHSPLTest("Very low-DoS-5.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
+        self._doHSPLTest("Very low-DoS-5.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
+
 class TestDNSTunneling(BasicTest):
     """
     Tests the DNS tunneling attack responses.
