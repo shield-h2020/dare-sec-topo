@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 HSPL and stuff.
 
@@ -24,6 +23,7 @@ from cybertop.util import getRecipeNamespace
 from cybertop.util import getHSPLNamespace
 from cybertop.util import getXSINamespace
 from cybertop.log import LOG
+import re
 
 class HSPLReasoner(object):
     """
@@ -115,14 +115,100 @@ class HSPLReasoner(object):
                 etree.SubElement(trafficConstraints, "{%s}rate-limit" % getHSPLNamespace()).text = recipeRateLimit
         
         if schema.validate(hsplSet):
-            hsplCount = len(hsplSet.getchildren()) - 1
-            if hsplCount == 1:
-                LOG.info("%d HSPL generated.", hsplCount)
-            else:
-                LOG.info("%d HSPLs generated.", hsplCount)
+            hsplSet = self.__cleanAndMerge(hsplSet)
+                
             LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
+            
             return hsplSet
-        
         else:
             LOG.critical("Invalid HSPL set generated.")
             raise SyntaxError("Invalid HSPL set generated.")
+
+    def __cleanAndMerge(self, hsplSet):
+        """
+        Polish an HSPL set by removing the duplicate HSPLs and merging them together, if needed. We only work on the objects.
+        @param hsplSet: The HSPL set to use.
+        @return: The cleaned HSPL set.
+        """
+        hsplCount = len(hsplSet.getchildren()) - 1
+        if hsplCount == 1:
+            LOG.info("%d initial HSPL generated.", hsplCount)
+        else:
+            LOG.info("%d initial HSPLs generated.", hsplCount)
+        
+        hspls = []
+        
+        # Pass 0: extracts the HSPLs.
+        for i in hsplSet:
+            if i.tag == "{%s}hspl" % getHSPLNamespace():
+                hspls.append(i)
+        
+        # Pass 1 remove the included HSPLs.
+        includedHSPLs = set()
+        for i in range(0, len(hspls) - 1):
+            hspl1 = hspls[i]
+            for j in range(i + 1, len(hspls)):
+                hspl2 = hspls[j]
+                if self.__checkIncludedHSPLs(hspl1, hspl2):
+                    includedHSPLs.add(hspl2)
+        if len(includedHSPLs) == 1:
+            LOG.debug("%d included HSPL removed.", len(includedHSPLs))
+        elif len(includedHSPLs) > 1:
+            LOG.debug("%d included HSPLs removed.", len(includedHSPLs))
+        for i in includedHSPLs:
+            hspls.remove(i)
+            hsplSet.remove(i)
+        
+        return hsplSet
+
+    def __checkIncludedHSPLs(self, hspl1, hspl2):
+        """
+        Checks if the first HSPLs includes the second one.
+        @param hspl1: The first HSPL.
+        @param hspl2: The second HSPL.
+        @return: True if the two HSPLs are equivalent or the first HSPL include the second one, False otherwise.
+        """
+        subject1 = hspl1.findtext("{%s}subject" % getHSPLNamespace())
+        subject2 = hspl2.findtext("{%s}subject" % getHSPLNamespace())
+        action1 = hspl1.findtext("{%s}action" % getHSPLNamespace())
+        action2 = hspl2.findtext("{%s}action" % getHSPLNamespace())
+        object1 = hspl1.findtext("{%s}object" % getHSPLNamespace())
+        object2 = hspl2.findtext("{%s}object" % getHSPLNamespace())
+        trafficConstraints1 = hspl1.find("{%s}traffic-constraints" % getHSPLNamespace())
+        trafficConstraints2 = hspl2.find("{%s}traffic-constraints" % getHSPLNamespace())
+
+        m1 = re.match("(\d+\.\d+\.\d+\.\d+)(:(\d+|\*|any))?", object1)
+        m2 = re.match("(\d+\.\d+\.\d+\.\d+)(:(\d+|\*|any))?", object2)
+        objectCheck = False
+        if m1 and m2:
+            address1 = m1.group(1)
+            address2 = m2.group(1)
+            port1 = m1.group(3)
+            port2 = m2.group(3)
+            if address1 == address2 and (port1 == port2 or port1 == "*" or port1 == "any"):
+                objectCheck = True
+
+        if subject1 == subject2 and action1 == action2 and objectCheck and self.__checkEqualXML(trafficConstraints1, trafficConstraints2):
+            return True
+        
+        return False
+
+    def __checkEqualXML(self, tree1, tree2):
+        """
+        Checks if the two XML tree are the same.
+        @param tree1: The first tree.
+        @param tree2: The second tree.
+        @return: True if the two trees are equivalent, False otherwise.
+        """
+        if tree1.tag != tree2.tag:
+            return False
+        if tree1.text != tree2.text:
+            return False
+        if tree1.tail != tree2.tail:
+            return False
+        if tree1.attrib != tree2.attrib:
+            return False
+        if len(tree1) != len(tree2):
+            return False
+        
+        return all(self.__checkEqualXML(c1, c2) for c1, c2 in zip(tree1, tree2))
