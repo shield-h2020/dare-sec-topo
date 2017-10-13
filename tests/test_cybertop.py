@@ -160,36 +160,36 @@ class TestDNSTunneling(BasicTest):
         """
         Tests the DNS tunneling, very high severity.
         """
-        self._doHSPLTest("Very high-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop"])
-        self._doHSPLTest("Very high-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop"])
+        self._doHSPLTest("Very high-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP"], ["drop"])
+        self._doHSPLTest("Very high-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP"], ["drop"])
         
     def test_highDNS(self):
         """
         Tests the DNS tunneling, very high severity.
         """
-        self._doHSPLTest("High-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
-        self._doHSPLTest("High-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
+        self._doHSPLTest("High-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP"], ["drop"])
+        self._doHSPLTest("High-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP"], ["drop"])
         
     def test_lowDNS(self):
         """
         Tests the DNS tunneling, very high severity.
         """
-        self._doHSPLTest("Low-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
-        self._doHSPLTest("Low-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
+        self._doHSPLTest("Low-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP"], ["drop"])
+        self._doHSPLTest("Low-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP"], ["drop"])
         
     def test_veryLowDNS(self):
         """
         Tests the DNS tunneling, very high severity.
         """
-        self._doHSPLTest("Very low-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop"])
-        self._doHSPLTest("Very low-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop"])
+        self._doHSPLTest("Very low-DNS tunneling-1.csv", "landscape1.xml", ["TCP+UDP"], ["drop"])
+        self._doHSPLTest("Very low-DNS tunneling-1.csv", "landscape2.xml", ["TCP+UDP"], ["drop"])
 
     def test_noneDNS(self):
         """
         Tests the DNS tunneling, no severity.
         """
-        self._doHSPLTest("dns_results.csv", "landscape1.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
-        self._doHSPLTest("dns_results.csv", "landscape2.xml", ["TCP+UDP", "TCP+UDP", "TCP+UDP", "TCP+UDP"], ["drop", "drop", "drop", "drop"])
+        self._doHSPLTest("dns_results.csv", "landscape1.xml", ["TCP+UDP"] * 2, ["drop"] * 2)
+        self._doHSPLTest("dns_results.csv", "landscape2.xml", ["TCP+UDP"] * 2, ["drop"] * 2)
 
 if __name__ == "__main__":
     unittest.main()
