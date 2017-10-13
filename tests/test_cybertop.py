@@ -151,6 +151,13 @@ class TestDoS(BasicTest):
         self._doHSPLTest("Very low-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["limit", "limit"])
         self._doHSPLTest("Very low-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop", "drop"])
 
+    def test_big(self):
+        """
+        Tests a big DoS attack with 1000 clients.
+        """
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape1.xml", ["TCP"] * 1000, ["drop"] * 1000)
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape2.xml", ["TCP"] * 1000, ["drop"] * 1000)
+
 class TestDNSTunneling(BasicTest):
     """
     Tests the DNS tunneling attack responses.
