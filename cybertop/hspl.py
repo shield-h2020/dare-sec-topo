@@ -24,6 +24,7 @@ from cybertop.util import getHSPLNamespace
 from cybertop.util import getXSINamespace
 from cybertop.log import LOG
 import re
+import copy
 
 class HSPLReasoner(object):
     """
@@ -100,9 +101,9 @@ class HSPLReasoner(object):
             count += 1
             hspl = etree.SubElement(hsplSet, "{%s}hspl" % getHSPLNamespace())
             etree.SubElement(hspl, "{%s}name" % getHSPLNamespace()).text = "%s #%d" % (recipeName, count)
-            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = i.attacker
+            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = i.target
             etree.SubElement(hspl, "{%s}action" % getHSPLNamespace()).text = recipeAction
-            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = i.target
+            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = i.attacker
             trafficConstraints = etree.SubElement(hspl, "{%s}traffic-constraints" % getHSPLNamespace())
             if recipeType is not None:
                 eventType = recipeType
@@ -130,6 +131,10 @@ class HSPLReasoner(object):
         @param hsplSet: The HSPL set to use.
         @return: The cleaned HSPL set.
         """
+        hsplMergingThreshold = int(self.configParser.get("global", "hsplMergingThreshold"))
+        hsplMergingMinBits = int(self.configParser.get("global", "hsplMergingMinBits"))
+        hsplMergingMaxBits = int(self.configParser.get("global", "hsplMergingMaxBits"))
+        
         hsplCount = len(hsplSet.getchildren()) - 1
         if hsplCount == 1:
             LOG.info("%d initial HSPL generated.", hsplCount)
@@ -143,7 +148,7 @@ class HSPLReasoner(object):
             if i.tag == "{%s}hspl" % getHSPLNamespace():
                 hspls.append(i)
         
-        # Pass 1 remove the included HSPLs.
+        # Pass 1: removes the included HSPLs.
         includedHSPLs = set()
         for i in range(0, len(hspls) - 1):
             hspl1 = hspls[i]
@@ -151,19 +156,42 @@ class HSPLReasoner(object):
                 hspl2 = hspls[j]
                 if self.__checkIncludedHSPLs(hspl1, hspl2):
                     includedHSPLs.add(hspl2)
+        for i in includedHSPLs:
+            hspls.remove(i)
+            hsplSet.remove(i)
         if len(includedHSPLs) == 1:
             LOG.debug("%d included HSPL removed.", len(includedHSPLs))
         elif len(includedHSPLs) > 1:
             LOG.debug("%d included HSPLs removed.", len(includedHSPLs))
-        for i in includedHSPLs:
+        
+        # Pass 2: merges the IP address using * as the port number.
+        mergedHSPLs = set()
+        if len(hspls) > hsplMergingThreshold:
+            for i in range(0, len(hspls) - 1):
+                hspl1 = hspls[i]
+                object1 = hspl1.find("{%s}object" % getHSPLNamespace())
+                newHSPL = copy.deepcopy(hspl1)
+                newObject = newHSPL.find("{%s}object" % getHSPLNamespace())
+                m = re.match("(\d+\.\d+\.\d+\.\d+)(:(\d+|\*|any))?", newObject.text)
+                if m:
+                    newObject.text = "%s:*" % m.group(1)
+                for j in range(i + 1, len(hspls)):
+                    hspl2 = hspls[j]
+                    if hspl2 not in mergedHSPLs and self.__checkIncludedHSPLs(newHSPL, hspl2):
+                        object1.text = newObject.text
+                        mergedHSPLs.add(hspl2)
+        for i in mergedHSPLs:
             hspls.remove(i)
             hsplSet.remove(i)
+        if len(mergedHSPLs) == 1:
+            LOG.debug("%d HSPL merged using any port.", len(mergedHSPLs))
+        elif len(mergedHSPLs) > 1:
+            LOG.debug("%d HSPLs merged using any ports.", len(mergedHSPLs))
         
-        # Pass 2 merge the HSPLs, if needed.
-        hsplMergingThreshold = self.configParser.get("global", "hsplMergingThreshold")
-        hsplMergingMinBits = self.configParser.get("global", "hsplMergingMinBits")
-        hsplMergingMaxBits = self.configParser.get("global", "hsplMergingMaxBits")
-        
+        # Pass 3: merges the HSPLs, if needed.
+#         bits = hsplMergingMinBits
+#         while len(hspls) > hsplMergingThreshold or bits > hsplMergingMaxBits:
+#             bits += 1
         
         return hsplSet
 
