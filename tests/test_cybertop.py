@@ -151,20 +151,6 @@ class TestDoS(BasicTest):
         self._doHSPLTest("Very low-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["limit", "limit"])
         self._doHSPLTest("Very low-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop", "drop"])
 
-    def test_hsplMerging1(self):
-        """
-        Tests the HSPL merging, test #1.
-        """
-        self._doHSPLTest("Very low-DoS-4.csv", "landscape1.xml", ["TCP"], ["limit"])
-        self._doHSPLTest("Very low-DoS-4.csv", "landscape2.xml", ["TCP"], ["drop"])
-
-    def test_hsplMerging2(self):
-        """
-        Tests the HSPL merging, test #2.
-        """
-        self._doHSPLTest("Very low-DoS-5.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
-        self._doHSPLTest("Very low-DoS-5.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
-
 class TestDNSTunneling(BasicTest):
     """
     Tests the DNS tunneling attack responses.
@@ -204,6 +190,32 @@ class TestDNSTunneling(BasicTest):
         """
         self._doHSPLTest("dns_results.csv", "landscape1.xml", ["TCP+UDP"] * 2, ["drop"] * 2)
         self._doHSPLTest("dns_results.csv", "landscape2.xml", ["TCP+UDP"] * 2, ["drop"] * 2)
+
+class TestHSPLMerging(BasicTest):
+    """
+    Tests the HSPL merging.
+    """
+
+    def test_hsplMerging1(self):
+        """
+        Tests the HSPL merging, test #1.
+        """
+        self._doHSPLTest("Very low-DoS-4.csv", "landscape1.xml", ["TCP"], ["limit"])
+        self._doHSPLTest("Very low-DoS-4.csv", "landscape2.xml", ["TCP"], ["drop"])
+
+    def test_hsplMerging2(self):
+        """
+        Tests the HSPL merging, test #2.
+        """
+        self._doHSPLTest("Very low-DoS-5.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
+        self._doHSPLTest("Very low-DoS-5.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
+
+    def test_hsplMerging3(self):
+        """
+        Tests the HSPL merging, test #2.
+        """
+        self._doHSPLTest("Very low-DoS-6.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
+        #self._doHSPLTest("High-DoS-730.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
 
 if __name__ == "__main__":
     unittest.main()
