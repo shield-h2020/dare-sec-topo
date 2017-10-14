@@ -229,7 +229,14 @@ class TestHSPLMerging(BasicTest):
         Tests the HSPL merging, test #5.
         """
         self._doHSPLTest("Very low-DoS-8.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
-#         self._doHSPLTest("Very low-DoS-8.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
+        self._doHSPLTest("Very low-DoS-8.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
+
+    def test_hsplMerging6(self):
+        """
+        Tests the HSPL merging, test #5.
+        """
+        self._doHSPLTest("Very low-DoS-9.csv", "landscape1.xml", ["TCP"] * 9, ["limit"] * 9)
+        self._doHSPLTest("Very low-DoS-9.csv", "landscape2.xml", ["TCP"] * 9, ["drop"] * 9)
 
 if __name__ == "__main__":
     unittest.main()
