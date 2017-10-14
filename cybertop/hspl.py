@@ -144,76 +144,54 @@ class HSPLReasoner(object):
             LOG.info("%d initial HSPL generated.", hsplCount)
         else:
             LOG.info("%d initial HSPLs generated.", hsplCount)
-        
-        hspls = []
-        
-        # Pass 0: extracts the HSPLs.
+                        
+        # Pass 0: create the map.
+        hsplMap = HSPLMap()
         for i in hsplSet:
             if i.tag == "{%s}hspl" % getHSPLNamespace():
-                hspls.append(i)
-        hsplMap = self.__buildMap(hspls)
+                hsplMap.add(i)
         
         # Pass 1: removes the included HSPLs.
-        includedHSPLs = self.__findInclusions(hspls, hsplMap)
-        for i in includedHSPLs:
-            hspls.remove(i)
-            hsplSet.remove(i)
-        if len(includedHSPLs) == 1:
-            LOG.debug("%d included HSPL removed.", len(includedHSPLs))
-        elif len(includedHSPLs) > 1:
-            LOG.debug("%d included HSPLs removed.", len(includedHSPLs))
+        includedHSPLs = self.__mergeInclusions(hsplSet, hsplMap)
+        if includedHSPLs > 1:
+            LOG.debug("%d included HSPLs removed.", includedHSPLs)
+        else:
+            LOG.debug("%d included HSPL removed.", includedHSPLs)
          
         # Pass 2: merges the IP address using * as the port number.
-        mergedHSPLs = set()
-        if len(hspls) > hsplMergingThreshold:
-            for i in range(0, len(hspls) - 1):
-                hspl1 = hspls[i]
-                object1 = hspl1.find("{%s}object" % getHSPLNamespace())
-                newHSPL = copy.deepcopy(hspl1)
-                newObject = newHSPL.find("{%s}object" % getHSPLNamespace())
-                m = re.match("(\d+\.\d+\.\d+\.\d+)(:(\d+|\*|any))?", newObject.text)
-                if m:
-                    newObject.text = "%s:*" % m.group(1)
-                for j in range(i + 1, len(hspls)):
-                    hspl2 = hspls[j]
-                    if hspl2 not in mergedHSPLs and self.__checkIncludedHSPLs(newHSPL, hspl2):
-                        object1.text = newObject.text
-                        mergedHSPLs.add(hspl2)
-        for i in mergedHSPLs:
-            hspls.remove(i)
-            hsplSet.remove(i)
-        if len(mergedHSPLs) == 1:
-            LOG.debug("%d HSPL merged using any port.", len(mergedHSPLs))
-        elif len(mergedHSPLs) > 1:
-            LOG.debug("%d HSPLs merged using any ports.", len(mergedHSPLs))
+        mergedHSPLs = self.__mergeWithAnyPorts(hsplSet, hsplMap)
+        if mergedHSPLs > 1:
+            LOG.debug("%d HSPLs merged using any ports.", mergedHSPLs)
+        else:
+            LOG.debug("%d HSPL merged using any port.", mergedHSPLs)
         
         # Pass 3: merges the HSPLs, if needed.
-        mergedHSPLs = set()
-        bits = 32 - hsplMergingMinBits
-        while len(hspls) - len(mergedHSPLs) > hsplMergingThreshold and bits <= 32 - hsplMergingMaxBits:
-            for i in range(0, len(hspls) - 1):
-                hspl1 = hspls[i]
-                object1 = hspl1.find("{%s}object" % getHSPLNamespace())
-                newHSPL = copy.deepcopy(hspl1)
-                newObject = newHSPL.find("{%s}object" % getHSPLNamespace())
-                m1 = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", newObject.text)
-                if m1:
-                    address1 = "%s/%d" % (ip_address((int(ip_network(m1.group(1)).network_address) >> bits) << bits), 32 - bits)
-                    port1 = m1.group(4)
-                    for j in range(i + 1, len(hspls)):
-                        hspl2 = hspls[j]
-                        newObject.text = "%s:%s" % (address1, port1)
-                        if self.__checkIncludedHSPLs(newHSPL, hspl2):
-                            object1.text = newObject.text
-                            mergedHSPLs.add(hspl2)
-            bits += 1
-        for i in mergedHSPLs:
-            hspls.remove(i)
-            hsplSet.remove(i)
-        if len(mergedHSPLs) == 1:
-            LOG.debug("%d HSPL merged using subnets.", len(mergedHSPLs))
-        elif len(mergedHSPLs) > 1:
-            LOG.debug("%d HSPLs merged using subnets.", len(mergedHSPLs))
+#         mergedHSPLs = set()
+#         bits = 32 - hsplMergingMinBits
+#         while len(hspls) - len(mergedHSPLs) > hsplMergingThreshold and bits <= 32 - hsplMergingMaxBits:
+#             for i in range(0, len(hspls) - 1):
+#                 hspl1 = hspls[i]
+#                 object1 = hspl1.find("{%s}object" % getHSPLNamespace())
+#                 newHSPL = copy.deepcopy(hspl1)
+#                 newObject = newHSPL.find("{%s}object" % getHSPLNamespace())
+#                 m1 = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", newObject.text)
+#                 if m1:
+#                     address1 = "%s/%d" % (ip_address((int(ip_network(m1.group(1)).network_address) >> bits) << bits), 32 - bits)
+#                     port1 = m1.group(4)
+#                     for j in range(i + 1, len(hspls)):
+#                         hspl2 = hspls[j]
+#                         newObject.text = "%s:%s" % (address1, port1)
+#                         if self.__checkIncludedHSPLs(newHSPL, hspl2):
+#                             object1.text = newObject.text
+#                             mergedHSPLs.add(hspl2)
+#             bits += 1
+#         for i in mergedHSPLs:
+#             hspls.remove(i)
+#             hsplSet.remove(i)
+#         if len(mergedHSPLs) == 1:
+#             LOG.debug("%d HSPL merged using subnets.", len(mergedHSPLs))
+#         elif len(mergedHSPLs) > 1:
+#             LOG.debug("%d HSPLs merged using subnets.", len(mergedHSPLs))
         
         hsplCount = len(hsplSet.getchildren()) - 1
         if hsplCount == 1:
@@ -292,96 +270,185 @@ class HSPLReasoner(object):
         h = 37 * h + hash(etree.tostring(trafficConstraints))
         return h
     
-    def __getBytes(self, ip):
+    def __mergeInclusions(self, hsplSet, hsplMap):
         """
-        Retrieves the four bytes of an IPv4 address.
-        @param ip: The ip.
-        @return An array of four bytes.
+        Merges the included HSPLs.
+        @param hsplSet: The HSPL set to edit.
+        @param hsplMap: The HSPL map to use.
+        @return: The number of included HSPLs removed.
         """
-        address = ip_network(ip)
-        n = (int(address.network_address) >> (32 - address.prefixlen)) << (32 - address.prefixlen)
-        return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]
-
-    def __getHSPLObjectBytes(self, hspl):
-        """
-        Retrieves the four IPv4 bytes of an HSPL object.
-        @param hspl: The HSPL.
-        @return An array of four bytes or None if the object is not an IPv4.
-        """
-        xxx = hspl.findtext("{%s}object" % getHSPLNamespace())
-        m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", xxx)
-        if m:
-            address = ip_network(m.group(1))
-            n = (int(address.network_address) >> (32 - address.prefixlen)) << (32 - address.prefixlen)
-            return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]
-        else:
-            return None
-
-    def __buildMap(self, hspls):
-        """
-        Builds the HSPL map.
-        @param hspls: The HSPLs.
-        @return: The map.
-        """
-        hsplMap = {}
-        # This is a multi-level map where:
-        #  + the first key is given by an HSPL hash of subject+action+constraints
-        #  + the second key is the first byte of an IPv4 address
-        #  + the third key is the second byte of an IPv4 address
-        #  + the forth key is the third byte of an IPv4 address
-        #  + the fifth key is the forth byte of an IPv4 address
-        #  + the values are a list of HSPLs
-        for i in hspls:
-            key = self.__getHash(i)
-            if key not in hsplMap:
-                hsplMap[key] = {}
-            parts = self.__getHSPLObjectBytes(i)
-            if parts is not None:
-                mapByte0 = hsplMap[key]
-                if parts[0] not in mapByte0:
-                    mapByte0[parts[0]] = {}
-
-                mapByte1 = mapByte0[parts[0]]
-                if parts[1] not in mapByte1:
-                    mapByte1[parts[1]] = {}
-                    
-                mapByte2 = mapByte1[parts[1]]
-                if parts[2] not in mapByte2:
-                    mapByte2[parts[2]] = {}
-
-                mapByte3 = mapByte2[parts[2]]
-                if parts[3] not in mapByte3:
-                    mapByte3[parts[3]] = []
-                    
-                mapByte3[parts[3]].append(i)
-        
-        return hsplMap
-
-    def __findInclusions(self, hspls, hsplMap):
-        """
-        Finds the included HSPLs.
-        @param hspls: The HSPLs.
-        @param hsplMap: The HSPL map.
-        @return: The included HSPLs.
-        """
-        start = datetime.datetime.now()
         includedHSPLs = set()
-        for i in hspls:
-            key = self.__getHash(i)
-            parts = self.__getHSPLObjectBytes(i)
-            if key in hsplMap:
-                byte0Map = hsplMap[key]
-                if parts[0] in byte0Map:
-                    byte1Map = byte0Map[parts[0]]
-                    if parts[1] in byte1Map:
-                        byte2Map = byte1Map[parts[1]]
-                        if parts[2] in byte2Map:
-                            byte3Map = byte2Map[parts[2]]
-                            if parts[3] in byte3Map:
-                                l = byte3Map[parts[3]]
-                                for j in l:
-                                    if i != j and i not in includedHSPLs and j not in includedHSPLs and self.__checkIncludedHSPLs(i, j):
-                                        includedHSPLs.add(j)
-        stop = datetime.datetime.now()
-        print("TIME:", stop - start)
-        return includedHSPLs
+        
+        for i in hsplMap.getHSPLs():
+            if i not in includedHSPLs:
+                inclusions = hsplMap.find(i)
+                inclusions.remove(i)
+                includedHSPLs.update(inclusions)
+
+        for i in includedHSPLs:
+            hsplMap.remove(i)
+            hsplSet.remove(i)
+
+        return len(includedHSPLs)
+
+    def __mergeWithAnyPorts(self, hsplSet, hsplMap):
+        """
+        Merges together several HSPLs by using * as a port.
+        @param hsplSet: The HSPL set to edit.
+        @return: The number of merged HSPLs removed.
+        """
+        hspls = []
+        mergedHSPLs = []
+
+        for i in hsplMap.getHSPLs():
+            if i not in hspls:
+                inclusions = hsplMap.find(i, True)
+                if len(inclusions) > 1:
+                    mergedHSPLs.append(inclusions)
+                    hspls.extend(inclusions)
+                
+        for i in mergedHSPLs:
+            s = set(i)
+            first = s.pop()
+            firstObject = first.find("{%s}object" % getHSPLNamespace())
+            m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", firstObject.text)
+            address = m.group(1)
+            firstObject.text = "%s:*" % address
+            for j in s:
+                hsplMap.remove(j)
+                hsplSet.remove(j)
+
+        return len(hspls) - len(mergedHSPLs)
+
+class HSPLMap:
+    """
+    An HSPL map.
+    So, the internal map is basically a multi-level dictionary:
+     + the keys are the HSPL constant hash, the object IPv4 prefix length, the object IPv4 network address and the port
+     + the values are a list of HSPLs
+    This dictionary maps an HSPL to a set of HSPLs that are included.
+    Note that a single HSPL can appear in several different buckets.
+    Note also that single IPv4 addresses are treated as networks with a prefix length of 32.
+    """
+    
+    def __init__(self):
+        """
+        Creates an empty map.
+        """
+        self.__map = {}
+        self.__hspls = set()
+
+    def __getHash(self, hspl):
+        """
+        Retrieves the constant hash of an HSPL.
+        @param hspls: The HSPL.
+        @return: The constant hash of the HSPL.
+        """
+        subject = hspl.find("{%s}subject" % getHSPLNamespace())
+        action = hspl.find("{%s}action" % getHSPLNamespace())
+        trafficConstraints = hspl.find("{%s}traffic-constraints" % getHSPLNamespace())
+        h = 1
+        h = 37 * h + hash(etree.tostring(subject))
+        h = 37 * h + hash(etree.tostring(action))
+        h = 37 * h + hash(etree.tostring(trafficConstraints))
+        return h
+
+    def add(self, hspl):
+        """
+        Adds a new HSPL to the map.
+        @param hspl: The HSPL to add.
+        """
+        hsplObject = hspl.findtext("{%s}object" % getHSPLNamespace())
+        m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", hsplObject)
+        
+        if m:
+            key = self.__getHash(hspl)
+            address = ip_network(m.group(1))
+            port = m.group(4)
+            prefixLength = address.prefixlen
+            number = int(address.network_address)
+            if key not in self.__map:
+                self.__map[key] = {}
+            mapPrefixes = self.__map[key]
+            for i in range(0, prefixLength + 1):
+                if i not in mapPrefixes:
+                    mapPrefixes[i] = {}
+                mapAddresses = mapPrefixes[i]
+                n = (number >> i) << i
+                if n not in mapAddresses:
+                    mapAddresses[n] = {}
+                mapPort = mapAddresses[n]
+                if "*" not in mapPort:
+                    mapPort["*"] = set()
+                mapPort["*"].add(hspl)
+                if port not in mapPort:
+                    mapPort[port] = set()
+                mapPort[port].add(hspl)
+                self.__hspls.add(hspl)
+
+    def find(self, hspl, anyPort = False):
+        """
+        Finds all the inclusions of a HSPLs.
+        @param hspl: The HSPL to search for the inclusions.
+        @param anyPort: A value stating if we want to force an any port address or keep the original value.
+        @return: The set of HSPLs included by the passed HSPL.
+        """
+        inclusions = set()
+        
+        hsplObject = hspl.findtext("{%s}object" % getHSPLNamespace())
+        m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", hsplObject)
+        
+        if m:
+            key = self.__getHash(hspl)
+            address = ip_network(m.group(1))
+            port = m.group(4)
+            if port == "any" or anyPort:
+                port = "*"
+            prefixLength = address.prefixlen
+            number = int(address.network_address)
+            if key in self.__map:
+                mapPrefixes = self.__map[key]
+                mapAddresses = mapPrefixes[prefixLength]
+                n = (number >> prefixLength) << prefixLength
+                if n in mapAddresses:
+                    mapPort = mapAddresses[n]
+                    if port in mapPort:
+                        inclusions.update(mapPort[port])
+            
+        return inclusions
+    
+    def remove(self, hspl):
+        """
+        Removes an HSPL from the map.
+        @param hspl: The HSPL to remove.
+        """
+
+        hsplObject = hspl.findtext("{%s}object" % getHSPLNamespace())
+        m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", hsplObject)
+
+        if m:
+            key = self.__getHash(hspl)
+            address = ip_network(m.group(1))
+            port = m.group(4)
+            if port == "any":
+                port = "*"
+            prefixLength = address.prefixlen
+            number = int(address.network_address)
+            if key in self.__map:
+                mapPrefixes = self.__map[key]
+                mapAddresses = mapPrefixes[prefixLength]
+                n = (number >> prefixLength) << prefixLength
+                if n in mapAddresses:
+                    mapPort = mapAddresses[n]
+                    if port in mapPort:
+                        mapPort["*"].remove(hspl)
+                        mapPort.pop(port)
+        
+        self.__hspls.remove(hspl)
+            
+    def getHSPLs(self):
+        """
+        Retrieves the set of all the HSPLs inserted.
+        @return: All the inserted HSPLs.
+        """
+        return self.__hspls
