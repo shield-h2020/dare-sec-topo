@@ -28,6 +28,7 @@ import re
 import copy
 from ipaddress import ip_address
 from ipaddress import ip_network
+import datetime
 
 class HSPLReasoner(object):
     """
@@ -150,15 +151,10 @@ class HSPLReasoner(object):
         for i in hsplSet:
             if i.tag == "{%s}hspl" % getHSPLNamespace():
                 hspls.append(i)
+        hsplMap = self.__buildMap(hspls)
         
         # Pass 1: removes the included HSPLs.
-        includedHSPLs = set()
-        for i in range(0, len(hspls) - 1):
-            hspl1 = hspls[i]
-            for j in range(i + 1, len(hspls)):
-                hspl2 = hspls[j]
-                if self.__checkIncludedHSPLs(hspl1, hspl2):
-                    includedHSPLs.add(hspl2)
+        includedHSPLs = self.__findInclusions(hspls, hsplMap)
         for i in includedHSPLs:
             hspls.remove(i)
             hsplSet.remove(i)
@@ -280,3 +276,112 @@ class HSPLReasoner(object):
             return False
         
         return all(self.__checkEqualXML(c1, c2) for c1, c2 in zip(tree1, tree2))
+
+    def __getHash(self, hspl):
+        """
+        Retrieves the constant hash of an HSPL.
+        @param hspls: The HSPL.
+        @return: The constant hash of the HSPL.
+        """
+        subject = hspl.find("{%s}subject" % getHSPLNamespace())
+        action = hspl.find("{%s}action" % getHSPLNamespace())
+        trafficConstraints = hspl.find("{%s}traffic-constraints" % getHSPLNamespace())
+        h = 1
+        h = 37 * h + hash(etree.tostring(subject))
+        h = 37 * h + hash(etree.tostring(action))
+        h = 37 * h + hash(etree.tostring(trafficConstraints))
+        return h
+    
+    def __getBytes(self, ip):
+        """
+        Retrieves the four bytes of an IPv4 address.
+        @param ip: The ip.
+        @return An array of four bytes.
+        """
+        address = ip_network(ip)
+        n = (int(address.network_address) >> (32 - address.prefixlen)) << (32 - address.prefixlen)
+        return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]
+
+    def __getHSPLObjectBytes(self, hspl):
+        """
+        Retrieves the four IPv4 bytes of an HSPL object.
+        @param hspl: The HSPL.
+        @return An array of four bytes or None if the object is not an IPv4.
+        """
+        xxx = hspl.findtext("{%s}object" % getHSPLNamespace())
+        m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", xxx)
+        if m:
+            address = ip_network(m.group(1))
+            n = (int(address.network_address) >> (32 - address.prefixlen)) << (32 - address.prefixlen)
+            return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]
+        else:
+            return None
+
+    def __buildMap(self, hspls):
+        """
+        Builds the HSPL map.
+        @param hspls: The HSPLs.
+        @return: The map.
+        """
+        hsplMap = {}
+        # This is a multi-level map where:
+        #  + the first key is given by an HSPL hash of subject+action+constraints
+        #  + the second key is the first byte of an IPv4 address
+        #  + the third key is the second byte of an IPv4 address
+        #  + the forth key is the third byte of an IPv4 address
+        #  + the fifth key is the forth byte of an IPv4 address
+        #  + the values are a list of HSPLs
+        for i in hspls:
+            key = self.__getHash(i)
+            if key not in hsplMap:
+                hsplMap[key] = {}
+            parts = self.__getHSPLObjectBytes(i)
+            if parts is not None:
+                mapByte0 = hsplMap[key]
+                if parts[0] not in mapByte0:
+                    mapByte0[parts[0]] = {}
+
+                mapByte1 = mapByte0[parts[0]]
+                if parts[1] not in mapByte1:
+                    mapByte1[parts[1]] = {}
+                    
+                mapByte2 = mapByte1[parts[1]]
+                if parts[2] not in mapByte2:
+                    mapByte2[parts[2]] = {}
+
+                mapByte3 = mapByte2[parts[2]]
+                if parts[3] not in mapByte3:
+                    mapByte3[parts[3]] = []
+                    
+                mapByte3[parts[3]].append(i)
+        
+        return hsplMap
+
+    def __findInclusions(self, hspls, hsplMap):
+        """
+        Finds the included HSPLs.
+        @param hspls: The HSPLs.
+        @param hsplMap: The HSPL map.
+        @return: The included HSPLs.
+        """
+        start = datetime.datetime.now()
+        includedHSPLs = set()
+        for i in hspls:
+            key = self.__getHash(i)
+            parts = self.__getHSPLObjectBytes(i)
+            if key in hsplMap:
+                byte0Map = hsplMap[key]
+                if parts[0] in byte0Map:
+                    byte1Map = byte0Map[parts[0]]
+                    if parts[1] in byte1Map:
+                        byte2Map = byte1Map[parts[1]]
+                        if parts[2] in byte2Map:
+                            byte3Map = byte2Map[parts[2]]
+                            if parts[3] in byte3Map:
+                                l = byte3Map[parts[3]]
+                                for j in l:
+                                    if i != j and i not in includedHSPLs and j not in includedHSPLs and self.__checkIncludedHSPLs(i, j):
+                                        includedHSPLs.add(j)
+        stop = datetime.datetime.now()
+        print("TIME:", stop - start)
+        return includedHSPLs
