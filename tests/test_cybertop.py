@@ -173,8 +173,8 @@ class TestDoS(BasicTest):
         """
         Tests a big DoS attack with 1000 clients.
         """
-        self._doHSPLTest("Very high-DoS-4.csv", "landscape1.xml", ["TCP"] * 1000, ["drop"] * 1000)
-        self._doHSPLTest("Very high-DoS-4.csv", "landscape2.xml", ["TCP"] * 1000, ["drop"] * 1000)
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape1.xml", ["TCP"] * 8, ["drop"] * 8)
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape2.xml", ["TCP"] * 8, ["drop"] * 8)
 
 class TestDNSTunneling(BasicTest):
     """
