@@ -6,6 +6,9 @@
 	<recipe>
 		<name>limit packets</name>
 		<action>limit</action>
+		<object-constraints>
+			<any-port>true</any-port>
+		</object-constraints>
 		<traffic-constraints>
 			<max-connections>20</max-connections>
 			<rate-limit>100/s</rate-limit>
@@ -15,6 +18,9 @@
 	<recipe>
 		<name>drop packets</name>
 		<action>drop</action>
+		<object-constraints>
+			<any-port>true</any-port>
+		</object-constraints>
 	</recipe>
 
 </recipe-set>

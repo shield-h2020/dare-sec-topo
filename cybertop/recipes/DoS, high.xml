@@ -6,6 +6,9 @@
 	<recipe>
 		<name>drop packets</name>
 		<action>drop</action>
+		<object-constraints>
+			<any-port>true</any-port>
+		</object-constraints>
 	</recipe>
 
 </recipe-set>
