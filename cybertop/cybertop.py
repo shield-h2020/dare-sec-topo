@@ -19,7 +19,6 @@ The CyberSecurity Topologies related stuff.
 """
 
 import pyinotify
-import os
 from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
 from cybertop.plugins import ActionPlugin
@@ -31,7 +30,6 @@ from cybertop.hspl import HSPLReasoner
 from cybertop.mspl import MSPLReasoner
 import pika
 from lxml import etree
-import signal
 from cybertop.util import getPluginDirectory
 from cybertop import log
 from cybertop.log import LOG
@@ -65,9 +63,9 @@ class CyberTop(pyinotify.ProcessEvent):
         if len(c) > 0:
             LOG.debug("Configuration file '%s' read." % c[0])
         else:
-            LOG.critical("Cannot read the configuration file from '%s'." %
+            LOG.critical("Cannot read the configuration file from '%s'." % 
                          configurationFileName)
-            raise IOError("Cannot read the configuration file from '%s'" %
+            raise IOError("Cannot read the configuration file from '%s'" % 
                           configurationFileName)
 
         # Configures the plug-ins.
@@ -124,6 +122,7 @@ class CyberTop(pyinotify.ProcessEvent):
     def start(self, foreground=False):
         """
         Starts the CyberTop policy engine
+        @param foreground: A value stating if the daemon must be launched in foreground or background mode.
         """
         if (self.configParser.has_option("global", "dashboardURL") and
             self.configParser.has_option("global", "dashboardQueue") and
@@ -148,17 +147,20 @@ class CyberTop(pyinotify.ProcessEvent):
         wm = pyinotify.WatchManager()
         notifier = pyinotify.Notifier(wm, self)
         wm.add_watch(self.configParser.get("global", "watchedDirectory"),
-                     pyinotify.IN_CREATE, rec=True, auto_add=True)
+                     pyinotify.IN_CLOSE_WRITE, rec=True, auto_add=True)
         if(not foreground):
             notifier.loop(daemonize=True, pid_file=getPIDFile())
         else:
             notifier.loop(daemonize=False)
 
-    def process_IN_CREATE(self, event):
+    def process_IN_CLOSE_WRITE(self, event):
+        """
+        Handles a file creation.
+        @param event: The file event.
+        """
         try:
             [hsplSet, msplSet] = self.getMSPLs(event.pathname,
-                                               self.configParser.get(
-                                                   "global", "landscapeFile"))
+                self.configParser.get("global", "landscapeFile"))
             hsplString = etree.tostring(hsplSet).decode()
             msplString = etree.tostring(msplSet).decode()
 
@@ -174,16 +176,12 @@ class CyberTop(pyinotify.ProcessEvent):
             if self.channel is not None:
                 queue = self.configParser.get("global", "dashboardQueue")
                 self.channel.basic_publish(exchange="",
-                                           routing_key=queue,
-                                           body=message)
+                    routing_key=queue, body=message)
 
             # Appends everything to the dashboard dump file.
             if self.configParser.has_option("global", "dashboardFile"):
                 with open(self.configParser.get("global", "dashboardFile"),
-                          "a") as f:
+                    "a") as f:
                     f.write(message)
-        except:
-            LOG.critical("Error while transferring the HSPLs and MSPLs to the"
-                         + " dashboard.")
-            raise IOError("Cannot transfer the HSPLs and MSPLs to the"
-                          + " dashboard")
+        except BaseException as e:
+            LOG.critical(str(e))
