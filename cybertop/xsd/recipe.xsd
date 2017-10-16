@@ -76,6 +76,11 @@ limitations under the License.
 					<documentation>The policy objects, that is the attackers. They can be IP addresses, ports or URLs.</documentation>
 				</annotation>
 			</element>
+			<element name="object-constraints" type="tns:object-constraints" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>A set of optional object constraints to aid the refinement.</documentation>
+				</annotation>
+			</element>
 			<element name="traffic-constraints" type="tns:traffic-constraints" maxOccurs="1" minOccurs="0">
 				<annotation>
 					<documentation>A set of optional traffic constraints to aid the refinement.</documentation>
@@ -148,20 +153,31 @@ limitations under the License.
 			</element>
 			<element name="max-connections" type="positiveInteger" maxOccurs="1" minOccurs="0">
 				<annotation>
-					<documentation>The maximum number of connections allowed per host for a limit policy. Only useful for stateful connections (e.g. TCP).					</documentation>
+					<documentation>The maximum number of connections allowed per host for a limit policy. Only useful for stateful connections (e.g. TCP).</documentation>
 				</annotation>
 			</element>
 			<element name="rate-limit" maxOccurs="1" minOccurs="0">
 				<annotation>
-					<documentation>
-						The rate limit for a limit policy. It is a number of allowed packets or bits per unit of time (seconds, minutes, hours or days).
-					</documentation>
+					<documentation>The rate limit for a limit policy. It is a number of allowed packets or bits per unit of time (seconds, minutes, hours or days).</documentation>
 				</annotation>
 				<simpleType>
 					<restriction base="string">
 						<pattern value="\d+(bit|kbit|mbit)?/(second|minute|hour|day|s|m|h|d)" />
 					</restriction>
 				</simpleType>
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="object-constraints">
+		<annotation>
+			<documentation>The type of a policy object constraints.</documentation>
+		</annotation>
+		<sequence>
+			<element name="any-port" type="boolean" maxOccurs="1" minOccurs="0">
+				<annotation>
+					<documentation>Force the any port in the generated HSPL.</documentation>
+				</annotation>
 			</element>
 		</sequence>
 	</complexType>
