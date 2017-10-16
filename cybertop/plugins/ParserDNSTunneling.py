@@ -39,13 +39,14 @@ class ParserDoS(ParserPlugin):
         @return: The attack event or None if this line should be silently ignored.
         @raise IOError: if the line contains something invalid.
         """
-        parts = re.split("\s+,?\s*", line.rstrip())
-
-        # Columns check.
-        if len(parts) != 13:
-            LOG.critical("The line %d in the file '%s' has an invalid format.", count, fileName)
-            raise IOError("The line %d in the file '%s' has an invalid format." % (count, fileName))
+        if re.match("\s*#.*", line):
+            return None
         
+        parts = re.split("\s*,\s*|\s+", line.rstrip())
+        
+        if parts == [""]:
+            return None
+
         try:
             timestamp = parser.parse("%s %s %s %s %s" % (parts[0], parts[1], parts[2], parts[3], parts[4]))
             frameLength = int(parts[6])
@@ -64,5 +65,8 @@ class ParserDoS(ParserPlugin):
 
             return attackEvent
         except:
-            LOG.critical("The line %d in the file '%s' has an invalid format.", count, fileName)
-            raise IOError("The line %d in the file '%s' has an invalid format." % (count, fileName))
+            if count == 1:
+                return None
+            else:
+                LOG.critical("The line %d in the file '%s' has an invalid format.", count, fileName)
+                raise IOError("The line %d in the file '%s' has an invalid format." % (count, fileName))

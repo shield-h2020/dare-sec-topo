@@ -1,4 +1,4 @@
-# CyberSecurity Topologies v0.6
+# CyberSecurity Topologies v0.7
 
 Welcome to the DARE's CyberSecurity Topologies tool page.
 

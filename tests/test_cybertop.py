@@ -173,8 +173,8 @@ class TestDoS(BasicTest):
         """
         Tests a big DoS attack with 1000 clients.
         """
-        self._doHSPLTest("Very high-DoS-4.csv", "landscape1.xml", ["TCP"] * 1000, ["drop"] * 1000)
-        self._doHSPLTest("Very high-DoS-4.csv", "landscape2.xml", ["TCP"] * 1000, ["drop"] * 1000)
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape1.xml", ["TCP"] * 8, ["drop"] * 8)
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape2.xml", ["TCP"] * 8, ["drop"] * 8)
 
 class TestDNSTunneling(BasicTest):
     """
@@ -330,6 +330,34 @@ class TestHSPLMerging(BasicTest):
             "1.3.50.0/24:*",
             "1.3.100.0/24:*",
             "1.3.150.0/24:*"])
+
+class TestCSVParser(BasicTest):
+
+    def test_parseHeaders(self):
+        """
+        Tests a CSV file with and without a header.
+        """
+        self._doHSPLTest("High-DoS-4.csv", "landscape1.xml", ["TCP"] * 5, ["drop"] * 5)
+        self._doHSPLTest("High-DoS-5.csv", "landscape1.xml", ["TCP"] * 5, ["drop"] * 5)
+
+    def test_parseSeparators(self):
+        """
+        Tests a CSV file with different separators.
+        """
+        self._doHSPLTest("High-DoS-6.csv", "landscape1.xml", ["TCP"] * 5, ["drop"] * 5)
+        self._doHSPLTest("High-DoS-7.csv", "landscape1.xml", ["TCP"] * 5, ["drop"] * 5)
+
+    def test_parseEmptyLines(self):
+        """
+        Tests a CSV file with some empty lines.
+        """
+        self._doHSPLTest("High-DoS-8.csv", "landscape1.xml", ["TCP"] * 5, ["drop"] * 5)
+
+    def test_parseComments(self):
+        """
+        Tests a CSV file with some comments.
+        """
+        self._doHSPLTest("High-DoS-9.csv", "landscape1.xml", ["TCP"] * 5, ["drop"] * 5)
 
 if __name__ == "__main__":
     unittest.main()

@@ -39,16 +39,13 @@ class ParserDoS(ParserPlugin):
         @return: The attack event or None if this line should be silently ignored.
         @raise IOError: if the line contains something invalid.
         """
-        parts = re.split("\s+,?\s*", line.rstrip())
-        # Checks if this is the header.
-        if (count == 1 and
-            parts == ["timereceived", "Year", "M", "D", "h", "m", "s", "dur", "src_ip", "dst_ip", "s_prt", "d_prt", "proto", "in_pkt", "in_bytes", "out_pkts", "out_bytes", "score"]):
+        if re.match("\s*#.*", line):
             return None
-
-        # Columns check.
-        if len(parts) != 19:
-            LOG.critical("The line %d in the file '%s' has an invalid format.", count, fileName)
-            raise IOError("The line %d in the file '%s' has an invalid format." % (count, fileName))
+        
+        parts = re.split("\s*,\s*|\s+", line.rstrip())
+        
+        if parts == [""]:
+            return None
         
         try:
             timestamp = parser.parse("%s %s" % (parts[0], parts[1]))
@@ -71,5 +68,8 @@ class ParserDoS(ParserPlugin):
 
             return attackEvent
         except:
-            LOG.critical("The line %d in the file '%s' has an invalid format.", count, fileName)
-            raise IOError("The line %d in the file '%s' has an invalid format." % (count, fileName))
+            if count == 1:
+                return None
+            else:
+                LOG.critical("The line %d in the file '%s' has an invalid format.", count, fileName)
+                raise IOError("The line %d in the file '%s' has an invalid format." % (count, fileName))
