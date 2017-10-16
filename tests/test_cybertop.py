@@ -40,13 +40,14 @@ class BasicTest(unittest.TestCase):
     Basic test class.
     """
 
-    def _doHSPLTest(self, attackFile, landscapeFile, expectedProtocols, expectedActions):
+    def _doHSPLTest(self, attackFile, landscapeFile, expectedProtocols, expectedActions, expectedObjectPorts = None):
         """
         Tests the HSPL generation.
         @param attackFile: The attack file to read.
         @param landscapeFile: The CSF file to read.
         @param expectedProtocols: The expected protocol list.
         @param expectedActions: The expected actions list.
+        @param expectedObjectPorts: The expected object port list or None if this test must be skipped.
         """
         cyberTop = CyberTop(getTestFilePath("cybertop.cfg"), getTestFilePath("logging.ini"))
     
@@ -58,9 +59,16 @@ class BasicTest(unittest.TestCase):
         for i in range(len(protocols)):
             self.assertEqual(protocols[i].text, expectedProtocols[i])
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (getHSPLNamespace(), getHSPLNamespace()))
+        objects = hsplSet.findall("{%s}hspl/{%s}object" % (getHSPLNamespace(), getHSPLNamespace()))
         self.assertEqual(len(actions), len(expectedActions))
         for i in range(len(actions)):
             self.assertEqual(actions[i].text, expectedActions[i])
+        if expectedObjectPorts is not None:
+            self.assertEqual(len(objects), len(expectedObjectPorts))
+            for i in range(0, len(objects)):
+                parts = objects[i].text.split(":")
+                self.assertEqual(len(parts), 2)
+                self.assertEqual(parts[1], expectedObjectPorts[i])
 
     def _doObjectTest(self, attackFile, landscapeFile, maximumHSPLs, expectedObjects):
         """
@@ -89,92 +97,92 @@ class TestDoS(BasicTest):
         """
         Tests the TCP flood, very high severity.
         """
-        self._doHSPLTest("Very high-DoS-1.csv", "landscape1.xml", ["TCP", "TCP"], ["drop", "drop"])
-        self._doHSPLTest("Very high-DoS-1.csv", "landscape2.xml", ["TCP", "TCP"], ["drop", "drop"])
+        self._doHSPLTest("Very high-DoS-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["*"] * 2)
+        self._doHSPLTest("Very high-DoS-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["*"] * 2)
         
     def test_highTCP(self):
         """
         Tests the TCP flood, high severity.
         """
-        self._doHSPLTest("High-DoS-1.csv", "landscape1.xml", ["TCP", "TCP"], ["drop", "drop"])
-        self._doHSPLTest("High-DoS-1.csv", "landscape2.xml", ["TCP", "TCP"], ["drop", "drop"])
+        self._doHSPLTest("High-DoS-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["*"] * 2)
+        self._doHSPLTest("High-DoS-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["*"] * 2)
     
     def test_lowTCP(self):
         """
         Tests the TCP flood, low severity.
         """
-        self._doHSPLTest("Low-DoS-1.csv", "landscape1.xml", ["TCP", "TCP"], ["limit", "limit"])
-        self._doHSPLTest("Low-DoS-1.csv", "landscape2.xml", ["TCP", "TCP"], ["drop", "drop"])
+        self._doHSPLTest("Low-DoS-1.csv", "landscape1.xml", ["TCP"] * 2, ["limit"] * 2, ["*"] * 2)
+        self._doHSPLTest("Low-DoS-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["*"] * 2)
 
     def test_veryLowTCP(self):
         """
         Tests the TCP flood, low severity.
         """
-        self._doHSPLTest("Very low-DoS-1.csv", "landscape1.xml", ["TCP", "TCP"], ["limit", "limit"])
-        self._doHSPLTest("Very low-DoS-1.csv", "landscape2.xml", ["TCP", "TCP"], ["drop", "drop"])
+        self._doHSPLTest("Very low-DoS-1.csv", "landscape1.xml", ["TCP"] * 2, ["limit"] * 2, ["*"] * 2)
+        self._doHSPLTest("Very low-DoS-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["*"] * 2)
 
     def test_veryHighUDP(self):
         """
         Tests the UDP flood, very high severity.
         """
-        self._doHSPLTest("Very high-DoS-2.csv", "landscape1.xml", ["UDP", "UDP"], ["drop", "drop"])
-        self._doHSPLTest("Very high-DoS-2.csv", "landscape2.xml", ["UDP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("Very high-DoS-2.csv", "landscape1.xml", ["UDP"] * 2, ["drop"] * 2, ["*"] * 2)
+        self._doHSPLTest("Very high-DoS-2.csv", "landscape2.xml", ["UDP"] * 2, ["drop"] * 2, ["*"] * 2)
         
     def test_highUDP(self):
         """
         Tests the UDP flood, high severity.
         """
-        self._doHSPLTest("High-DoS-2.csv", "landscape1.xml", ["UDP", "UDP"], ["drop", "drop"])
-        self._doHSPLTest("High-DoS-2.csv", "landscape2.xml", ["UDP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("High-DoS-2.csv", "landscape1.xml", ["UDP"] * 2, ["drop"] * 2, ["*"] * 2)
+        self._doHSPLTest("High-DoS-2.csv", "landscape2.xml", ["UDP"] * 2, ["drop"] * 2, ["*"] * 2)
 
     def test_lowUDP(self):
         """
         Tests the TCP flood, low severity.
         """
-        self._doHSPLTest("Low-DoS-2.csv", "landscape1.xml", ["UDP", "UDP"], ["limit", "limit"])
-        self._doHSPLTest("Low-DoS-2.csv", "landscape2.xml", ["UDP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("Low-DoS-2.csv", "landscape1.xml", ["UDP"] * 2, ["limit"] * 2, ["*"] * 2)
+        self._doHSPLTest("Low-DoS-2.csv", "landscape2.xml", ["UDP"] * 2, ["drop"] * 2, ["*"] * 2)
 
     def test_veryLowUDP(self):
         """
         Tests the TCP flood, low severity.
         """
-        self._doHSPLTest("Very low-DoS-2.csv", "landscape1.xml", ["UDP", "UDP"], ["limit", "limit"])
-        self._doHSPLTest("Very low-DoS-2.csv", "landscape2.xml", ["UDP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("Very low-DoS-2.csv", "landscape1.xml", ["UDP"] * 2, ["limit"] * 2, ["*"] * 2)
+        self._doHSPLTest("Very low-DoS-2.csv", "landscape2.xml", ["UDP"] * 2, ["drop"] * 2, ["*"] * 2)
 
     def test_VeryHighTCPAndUDP(self):
         """
         Tests the UDP flood, very high severity.
         """
-        self._doHSPLTest("Very high-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["drop", "drop"])
-        self._doHSPLTest("Very high-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("Very high-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["drop"] * 2, ["*"] * 2)
+        self._doHSPLTest("Very high-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop"] * 2, ["*"] * 2)
 
     def test_highTCPAndUDP(self):
         """
         Tests the UDP flood, high severity.
         """
-        self._doHSPLTest("High-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["drop", "drop"])
-        self._doHSPLTest("High-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("High-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["drop"] * 2, ["*"] * 2)
+        self._doHSPLTest("High-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop"] * 2, ["*"] * 2)
 
     def test_lowTCPAndUDP(self):
         """
         Tests the UDP flood, high severity.
         """
-        self._doHSPLTest("Low-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["limit", "limit"])
-        self._doHSPLTest("Low-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("Low-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["limit"] * 2, ["*"] * 2)
+        self._doHSPLTest("Low-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop"] * 2, ["*"] * 2)
 
     def test_veryLowTCPAndUDP(self):
         """
         Tests the UDP flood, high severity.
         """
-        self._doHSPLTest("Very low-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["limit", "limit"])
-        self._doHSPLTest("Very low-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop", "drop"])
+        self._doHSPLTest("Very low-DoS-3.csv", "landscape1.xml", ["TCP", "UDP"], ["limit"] * 2, ["*"] * 2)
+        self._doHSPLTest("Very low-DoS-3.csv", "landscape2.xml", ["TCP", "UDP"], ["drop"] * 2, ["*"] * 2)
 
     def test_big(self):
         """
         Tests a big DoS attack with 1000 clients.
         """
-        self._doHSPLTest("Very high-DoS-4.csv", "landscape1.xml", ["TCP"] * 8, ["drop"] * 8)
-        self._doHSPLTest("Very high-DoS-4.csv", "landscape2.xml", ["TCP"] * 8, ["drop"] * 8)
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape1.xml", ["TCP"] * 8, ["drop"] * 8, ["*"] * 8)
+        self._doHSPLTest("Very high-DoS-4.csv", "landscape2.xml", ["TCP"] * 8, ["drop"] * 8, ["*"] * 8)
 
 class TestDNSTunneling(BasicTest):
     """
