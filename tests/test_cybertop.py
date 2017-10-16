@@ -224,31 +224,57 @@ class TestHSPLMerging(BasicTest):
         """
         Tests the subnets merging.
         """
-        self._doObjectTest("Very low-DoS-5.csv", "landscape1.xml", 10, "91\.211\.1\.(0|2|4|6|8|10)/31:\*")
-
+        self._doObjectTest("Very low-DoS-5.csv", "landscape1.xml", 10, [
+            "91.211.1.0/31:*",
+            "91.211.1.2/31:*",
+            "91.211.1.4/31:*",
+            "91.211.1.6/31:*",
+            "91.211.1.8/31:*",
+            "91.211.1.10/31:*"])
     def test_mergeAnyPortsWithInclusions(self):
         """
         Tests that any ports merging with some inclusions.
         """
-        self._doObjectTest("Very low-DoS-6.csv", "landscape1.xml", 10, ["91.211.1.100:*"])
+        self._doObjectTest("Very low-DoS-6.csv", "landscape1.xml", 10, ["91.211.1.0:*"])
 
     def test_mergeSubnetsWithInclusions(self):
         """
         Tests the subnets merging with some inclusions.
         """
-        self._doObjectTest("Very low-DoS-7.csv", "landscape1.xml", 10, "91\.211\.1\.(0|2|4|6|8|10)/31:\*")
+        self._doObjectTest("Very low-DoS-7.csv", "landscape1.xml", 10, [
+            "91.211.1.0/31:*",
+            "91.211.1.2/31:*",
+            "91.211.1.4/31:*",
+            "91.211.1.6/31:*",
+            "91.211.1.8/31:*",
+            "91.211.1.10/31:*"])
 
     def test_mergeAll(self):
         """
         Tests the any ports and subnets merging with some inclusions.
         """
-        self._doObjectTest("Very low-DoS-8.csv", "landscape1.xml", 10, "91\.211\.1\.(0|2|4|6|8|10)/31:\*")
+        self._doObjectTest("Very low-DoS-8.csv", "landscape1.xml", 10, [
+            "91.211.1.0/31:*",
+            "91.211.1.2/31:*",
+            "91.211.1.4/31:*",
+            "91.211.1.6/31:*",
+            "91.211.1.8/31:*",
+            "91.211.1.10/31:*"])
 
     def test_mergeBig1(self):
         """
         Big test #1!
         """
-        self._doObjectTest("Very low-DoS-9.csv", "landscape1.xml", 10, "(((100\.114\.244\.(0|128))|(1\.100\.7\.(0|128))|(1\.152\.233\.(0|128))|(10\.14\.254\.(0|128)))/25)|(10\.101\.30\.61):\*")
+        self._doObjectTest("Very low-DoS-9.csv", "landscape1.xml", 10, [
+            "1.100.7.0/25:*",
+            "1.100.7.128/25:*",
+            "1.152.233.0/25:*",
+            "1.152.233.128/25:*",
+            "10.14.254.0/25:*",
+            "10.14.254.128/25:*",
+            "10.101.30.61:*",
+            "100.114.244.0/25:*",
+            "100.114.244.128/25:*"])
 
     def test_mergeBig2(self):
         """
@@ -266,13 +292,37 @@ class TestHSPLMerging(BasicTest):
         """
         Big test #4!
         """
-        self._doObjectTest("Very low-DoS-12.csv", "landscape1.xml", 10, "1\.2\.3\.(0|32|64|96|128|160|192|224)/27:\*")
+        self._doObjectTest("Very low-DoS-12.csv", "landscape1.xml", 10, [
+            "1.2.3.0/27:*",
+            "1.2.3.32/27:*",
+            "1.2.3.64/27:*",
+            "1.2.3.96/27:*",
+            "1.2.3.128/27:*",
+            "1.2.3.160/27:*",
+            "1.2.3.192/27:*",
+            "1.2.3.224/27:*"])
 
     def test_mergeBig5(self):
         """
         Big test #5!
         """
-        self._doObjectTest("Very low-DoS-13.csv", "landscape1.xml", 16, ["1.1.0.0/24:*", "1.3.0.0/24:*"])
+        self._doObjectTest("Very low-DoS-13.csv", "landscape1.xml", 16, [
+            "1.0.0.0/24:*",
+            "1.0.50.0/24:*",
+            "1.0.100.0/24:*",
+            "1.0.150.0/24:*",
+            "1.1.0.0/24:*",
+            "1.1.50.0/24:*",
+            "1.1.100.0/24:*",
+            "1.1.150.0/24:*",
+            "1.2.0.0/24:*",
+            "1.2.50.0/24:*",
+            "1.2.100.0/24:*",
+            "1.2.150.0/24:*",
+            "1.3.0.0/24:*",
+            "1.3.50.0/24:*",
+            "1.3.100.0/24:*",
+            "1.3.150.0/24:*"])
 
 if __name__ == "__main__":
     unittest.main()
