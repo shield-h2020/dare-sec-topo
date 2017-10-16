@@ -69,7 +69,7 @@ class Parser(object):
             identifier = int(match.group(3))
         else:
             severity = 4
-            attackType = os.path.splitext(fileName)[0]
+            attackType = os.path.splitext(ntpath.basename(fileName))[0]
             identifier = None
 
         # Finds a suitable parser.
