@@ -2,7 +2,7 @@
 Name = DoS attack event parser
 Module = ParserDoS
 Attack = DoS
-FileName = DoS
+FileName = DoS|TCP flood|UDP flood
 
 [Documentation]
 Description = The DoS attack event parser plug-in.
