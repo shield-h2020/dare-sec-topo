@@ -32,7 +32,7 @@ This project includes a Python module, named `cybertop`, and a sample applicatio
 │   │   ├── ParserDNSTunneling.py
 │   │   ├── ParserDNSTunneling.yapsy-plugin
 │   │   ├── ParserDoS.py
-│   │   ├── ParserDoS.yapsy-plugin
+│   │   └── ParserDoS.yapsy-plugin
 │   ├── plugins.py
 │   ├── recipes
 │   │   ├── DNS tunneling.xml
@@ -78,7 +78,17 @@ This project includes a Python module, named `cybertop`, and a sample applicatio
     ├── Very low-DNS tunneling-1.csv
     ├── Very low-DoS-1.csv
     ├── Very low-DoS-2.csv
-    └── Very low-DoS-3.csv
+    ├── Very low-DoS-3.csv
+    ├── Very low-DoS-4.csv
+    ├── Very low-DoS-5.csv
+    ├── Very low-DoS-6.csv
+    ├── Very low-DoS-7.csv
+    ├── Very low-DoS-8.csv
+    ├── Very low-DoS-9.csv
+    ├── Very low-DoS-10.csv
+    ├── Very low-DoS-11.csv
+    ├── Very low-DoS-12.csv
+    └── Very low-DoS-13.csv
 ```
 
 In particular:
