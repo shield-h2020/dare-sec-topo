@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from reportlab.platypus import para
 """
 HSPL and stuff.
 
@@ -25,10 +24,8 @@ from cybertop.util import getHSPLNamespace
 from cybertop.util import getXSINamespace
 from cybertop.log import LOG
 import re
-import copy
 from ipaddress import ip_address
 from ipaddress import ip_network
-import datetime
 
 class HSPLReasoner(object):
     """
@@ -134,7 +131,14 @@ class HSPLReasoner(object):
         Polish an HSPL set by removing the duplicate HSPLs and merging them together, if needed. We only work on the objects.
         @param hsplSet: The HSPL set to use.
         @return: The cleaned HSPL set.
-        """        
+        """
+        hsplMergeInclusions = int(self.configParser.getboolean("global", "hsplMergeInclusions"))
+        hsplMergeWithAnyPorts = int(self.configParser.getboolean("global", "hsplMergeWithAnyPorts"))
+        hsplMergeWithSubnets = int(self.configParser.getboolean("global", "hsplMergeWithSubnets"))
+        
+        if not hsplMergeInclusions and not hsplMergeWithAnyPorts and not hsplMergeWithSubnets:
+            return hsplSet
+
         hsplCount = len(hsplSet.getchildren()) - 1
         if hsplCount == 1:
             LOG.info("%d initial HSPL generated.", hsplCount)
@@ -148,25 +152,28 @@ class HSPLReasoner(object):
                 hsplMap.add(i)
         
         # Pass 1: removes the included HSPLs.
-        includedHSPLs = self.__mergeInclusions(hsplSet, hsplMap)
-        if includedHSPLs > 1:
-            LOG.debug("%d included HSPLs removed.", includedHSPLs)
-        else:
-            LOG.debug("%d included HSPL removed.", includedHSPLs)
+        if hsplMergeInclusions:
+            includedHSPLs = self.__mergeInclusions(hsplSet, hsplMap)
+            if includedHSPLs > 1:
+                LOG.debug("%d included HSPLs removed.", includedHSPLs)
+            else:
+                LOG.debug("%d included HSPL removed.", includedHSPLs)
          
         # Pass 2: merges the IP address using * as the port number.
-        mergedHSPLs = self.__mergeWithAnyPorts(hsplSet, hsplMap)
-        if mergedHSPLs > 1:
-            LOG.debug("%d HSPLs merged using any ports.", mergedHSPLs)
-        else:
-            LOG.debug("%d HSPL merged using any port.", mergedHSPLs)
+        if hsplMergeWithAnyPorts:
+            mergedHSPLs = self.__mergeWithAnyPorts(hsplSet, hsplMap)
+            if mergedHSPLs > 1:
+                LOG.debug("%d HSPLs merged using any ports.", mergedHSPLs)
+            else:
+                LOG.debug("%d HSPL merged using any port.", mergedHSPLs)
          
         # Pass 3: merges the HSPLs, if needed.
-        mergedHSPLs = self.__mergeWithSubnets(hsplSet, hsplMap)
-        if mergedHSPLs > 1:
-            LOG.debug("%d HSPLs merged using subnets.", mergedHSPLs)
-        else:
-            LOG.debug("%d HSPL merged using subnets.", mergedHSPLs)
+        if hsplMergeWithSubnets:
+            mergedHSPLs = self.__mergeWithSubnets(hsplSet, hsplMap)
+            if mergedHSPLs > 1:
+                LOG.debug("%d HSPLs merged using subnets.", mergedHSPLs)
+            else:
+                LOG.debug("%d HSPL merged using subnets.", mergedHSPLs)
         
         hsplCount = len(hsplSet.getchildren()) - 1
         if hsplCount == 1:
@@ -314,7 +321,6 @@ class HSPLReasoner(object):
         
         merged = set()
         while len(hsplMap.getHSPLs()) > hsplMergingThreshold and bits >= hsplMergingMaxBits:
-            print("ROUND", bits)
             hspls = set()
             mergedHSPLs = []
             
