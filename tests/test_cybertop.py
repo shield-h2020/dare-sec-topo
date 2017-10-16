@@ -21,7 +21,7 @@ Simple tests for the CyberTop class.
 import sys
 sys.path.append("..")
 
-#from cybertop.cybertop import CyberTop
+# from cybertop.cybertop import CyberTop
 from cybertop.util import getHSPLNamespace
 import unittest
 from cybertop.cybertop import CyberTop
@@ -39,7 +39,7 @@ class BasicTest(unittest.TestCase):
     """
     Basic test class.
     """
-        
+
     def _doHSPLTest(self, attackFile, landscapeFile, expectedProtocols, expectedActions):
         """
         Tests the HSPL generation.
@@ -61,6 +61,24 @@ class BasicTest(unittest.TestCase):
         self.assertEqual(len(actions), len(expectedActions))
         for i in range(len(actions)):
             self.assertEqual(actions[i].text, expectedActions[i])
+
+    def _doObjectTest(self, attackFile, landscapeFile, maximumHSPLs, expectedObjects):
+        """
+        Tests the HSPL generation.
+        @param attackFile: The attack file to read.
+        @param maximumHSPLs: The maximum number of HSPLs.
+        @param landscapeFile: The CSF file to read.
+        @param expectedObjects: The list of expected objects.
+        """
+        cyberTop = CyberTop(getTestFilePath("cybertop.cfg"), getTestFilePath("logging.ini"))
+    
+        r = cyberTop.getMSPLs(getTestFilePath(attackFile), getTestFilePath(landscapeFile))
+        self.assertIsNotNone(r)
+        [hsplSet, _] = r
+        objects = hsplSet.findall("{%s}hspl/{%s}object" % (getHSPLNamespace(), getHSPLNamespace()))
+        self.assertLessEqual(len(objects), maximumHSPLs)
+        for i in range(len(objects)):
+            self.assertIn(objects[i].text, expectedObjects)
 
 class TestDoS(BasicTest):
     """
@@ -196,47 +214,65 @@ class TestHSPLMerging(BasicTest):
     Tests the HSPL merging.
     """
 
-    def test_hsplMerging1(self):
+    def test_mergeAnyPorts(self):
         """
-        Tests the HSPL merging, test #1.
+        Tests that any ports merging.
         """
-        self._doHSPLTest("Very low-DoS-4.csv", "landscape1.xml", ["TCP"], ["limit"])
-        self._doHSPLTest("Very low-DoS-4.csv", "landscape2.xml", ["TCP"], ["drop"])
+        self._doObjectTest("Very low-DoS-4.csv", "landscape1.xml", 10, ["91.211.1.100:*"])
 
-    def test_hsplMerging2(self):
+    def test_mergeSubnets(self):
         """
-        Tests the HSPL merging, test #2.
+        Tests the subnets merging.
         """
-        self._doHSPLTest("Very low-DoS-5.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
-        self._doHSPLTest("Very low-DoS-5.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
+        self._doObjectTest("Very low-DoS-5.csv", "landscape1.xml", 10, "91\.211\.1\.(0|2|4|6|8|10)/31:\*")
 
-    def test_hsplMerging3(self):
+    def test_mergeAnyPortsWithInclusions(self):
         """
-        Tests the HSPL merging, test #3.
+        Tests that any ports merging with some inclusions.
         """
-        self._doHSPLTest("Very low-DoS-6.csv", "landscape1.xml", ["TCP"], ["limit"])
-        self._doHSPLTest("Very low-DoS-6.csv", "landscape2.xml", ["TCP"], ["drop"])
+        self._doObjectTest("Very low-DoS-6.csv", "landscape1.xml", 10, ["91.211.1.100:*"])
 
-    def test_hsplMerging4(self):
+    def test_mergeSubnetsWithInclusions(self):
         """
-        Tests the HSPL merging, test #4.
+        Tests the subnets merging with some inclusions.
         """
-        self._doHSPLTest("Very low-DoS-7.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
-        self._doHSPLTest("Very low-DoS-7.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
+        self._doObjectTest("Very low-DoS-7.csv", "landscape1.xml", 10, "91\.211\.1\.(0|2|4|6|8|10)/31:\*")
 
-    def test_hsplMerging5(self):
+    def test_mergeAll(self):
         """
-        Tests the HSPL merging, test #5.
+        Tests the any ports and subnets merging with some inclusions.
         """
-        self._doHSPLTest("Very low-DoS-8.csv", "landscape1.xml", ["TCP"] * 6, ["limit"] * 6)
-        self._doHSPLTest("Very low-DoS-8.csv", "landscape2.xml", ["TCP"] * 6, ["drop"] * 6)
+        self._doObjectTest("Very low-DoS-8.csv", "landscape1.xml", 10, "91\.211\.1\.(0|2|4|6|8|10)/31:\*")
 
-    def test_hsplMerging6(self):
+    def test_mergeBig1(self):
         """
-        Tests the HSPL merging, test #5.
+        Big test #1!
         """
-        self._doHSPLTest("Very low-DoS-9.csv", "landscape1.xml", ["TCP"] * 9, ["limit"] * 9)
-        self._doHSPLTest("Very low-DoS-9.csv", "landscape2.xml", ["TCP"] * 9, ["drop"] * 9)
+        self._doObjectTest("Very low-DoS-9.csv", "landscape1.xml", 10, "(((100\.114\.244\.(0|128))|(1\.100\.7\.(0|128))|(1\.152\.233\.(0|128))|(10\.14\.254\.(0|128)))/25)|(10\.101\.30\.61):\*")
+
+    def test_mergeBig2(self):
+        """
+        Big test #2!
+        """
+        self._doObjectTest("Very low-DoS-10.csv", "landscape1.xml", 10, ["1.2.3.4:*"])
+
+    def test_mergeBig3(self):
+        """
+        Big test #3!
+        """
+        self._doObjectTest("Very low-DoS-11.csv", "landscape1.xml", 10, ["1.2.3.4:*", "1.2.3.5:*"])
+
+    def test_mergeBig4(self):
+        """
+        Big test #4!
+        """
+        self._doObjectTest("Very low-DoS-12.csv", "landscape1.xml", 10, "1\.2\.3\.(0|32|64|96|128|160|192|224)/27:\*")
+
+    def test_mergeBig5(self):
+        """
+        Big test #5!
+        """
+        self._doObjectTest("Very low-DoS-13.csv", "landscape1.xml", 16, ["1.1.0.0/24:*", "1.3.0.0/24:*"])
 
 if __name__ == "__main__":
     unittest.main()
