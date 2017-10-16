@@ -314,6 +314,7 @@ class HSPLReasoner(object):
         
         merged = set()
         while len(hsplMap.getHSPLs()) > hsplMergingThreshold and bits >= hsplMergingMaxBits:
+            print("ROUND", bits)
             hspls = set()
             mergedHSPLs = []
             
@@ -463,12 +464,15 @@ class HSPLMap:
             number = int(address.network_address)
             mapPrefixes = self.__map[key]
             for i in range(0, prefixLength + 1):
-                mapAddresses = mapPrefixes[i]
-                n = (number >> (32 - i)) << (32 - i)
-                mapPort = mapAddresses[n]
-                mapPort[port].remove(hspl)
-                if port != "*":
-                    mapPort["*"].remove(hspl)
+                if i in mapPrefixes:
+                    mapAddresses = mapPrefixes[i]
+                    n = (number >> (32 - i)) << (32 - i)
+                    if n in mapAddresses:
+                        mapPort = mapAddresses[n]
+                        if port in mapPort:
+                            mapPort[port].remove(hspl)
+                        if port != "*" and "*" in mapPort:
+                            mapPort["*"].remove(hspl)
             
             if hspl in self.__hspls:
                 self.__hspls.remove(hspl)
