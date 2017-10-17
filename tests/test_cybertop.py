@@ -227,15 +227,22 @@ class TestDNSTunneling(BasicTest):
         """
         Tests the DNS tunneling, no severity.
         """
-        self._doHSPLTest("dns_results.csv", "landscape1.xml", ["TCP+UDP"] * 2, ["drop"] * 2, None, ["*"] * 2)
-        self._doHSPLTest("dns_results.csv", "landscape2.xml", ["TCP+UDP"] * 2, ["drop"] * 2, None, ["*"] * 2)
+        self._doHSPLTest("dns_results.csv", "landscape1.xml", ["TCP+UDP"], ["drop"], None, ["*"])
+        self._doHSPLTest("dns_results.csv", "landscape2.xml", ["TCP+UDP"], ["drop"], None, ["*"])
 
     def test_big(self):
         """
         Tests a big DNS tunneling attack.
         """
-        self._doHSPLTest("High-DNS tunneling-2.csv", "landscape1.xml", ["TCP+UDP"] * 4, ["drop"] * 4, ["0.0.0.0/0:53"] * 4)
-        self._doHSPLTest("High-DNS tunneling-2.csv", "landscape2.xml", ["TCP+UDP"] * 4, ["drop"] * 4, ["0.0.0.0/0:53"] * 4)
+        self._doHSPLTest("High-DNS tunneling-2.csv", "landscape1.xml", ["TCP+UDP"], ["drop"], ["0.0.0.0/0:53"])
+        self._doHSPLTest("High-DNS tunneling-2.csv", "landscape2.xml", ["TCP+UDP"], ["drop"], ["0.0.0.0/0:53"])
+
+    def test_filters(self):
+        """
+        Tests the DNS tunneling filters.
+        """
+        self._doHSPLTest("High-DNS tunneling-3.csv", "landscape1.xml", ["TCP+UDP"], ["drop"], ["0.0.0.0/0:53"])
+        self._doHSPLTest("High-DNS tunneling-3.csv", "landscape2.xml", ["TCP+UDP"], ["drop"], ["0.0.0.0/0:53"])
 
 class TestHSPLMerging(BasicTest):
     """
