@@ -124,6 +124,13 @@ class HSPLReasoner(object):
         
         if schema.validate(hsplSet):
             hsplSet = self.__cleanAndMerge(hsplSet)
+        
+            for i in hsplSet.findall("{%s}hspl" % getHSPLNamespace()):
+                hsplSubject = i.findtext("{%s}subject" % getHSPLNamespace())
+                hsplAction = i.findtext("{%s}action" % getHSPLNamespace())
+                hsplObject = i.findtext("{%s}object" % getHSPLNamespace())
+                hsplType = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
+                LOG.info("HPLS (%s, %s(%s), %s) generated." % (hsplSubject, hsplAction, hsplType, hsplObject))
                 
             LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
             
