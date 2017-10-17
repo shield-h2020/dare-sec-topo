@@ -241,8 +241,8 @@ class TestDNSTunneling(BasicTest):
         """
         Tests the DNS tunneling filters.
         """
-        self._doHSPLTest("High-DNS tunneling-3.csv", "landscape1.xml", ["TCP+UDP"], ["drop"], ["0.0.0.0/0:53"])
-        self._doHSPLTest("High-DNS tunneling-3.csv", "landscape2.xml", ["TCP+UDP"], ["drop"], ["0.0.0.0/0:53"])
+        self._doHSPLTest("High-DNS tunneling-3.csv", "landscape1.xml", ["TCP+UDP"] * 3, ["drop"] * 3, ["0.0.0.0/0:53"] * 3)
+        self._doHSPLTest("High-DNS tunneling-3.csv", "landscape2.xml", ["TCP+UDP"] * 3, ["drop"] * 3, ["0.0.0.0/0:53"] * 3)
 
 class TestHSPLMerging(BasicTest):
     """
