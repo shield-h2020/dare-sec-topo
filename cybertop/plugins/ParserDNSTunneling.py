@@ -56,7 +56,7 @@ class ParserDoS(ParserPlugin):
             queryType = int(parts[10])
             queryResponseCode = int(parts[11])
 
-            attackEvent = AttackEvent(timestamp, "0.0.0.0/0:53", "%s:*" % destinationAddress)
+            attackEvent = AttackEvent(timestamp, "%s:*" % destinationAddress, "0.0.0.0/0:53")
             attackEvent.fields["frameLength"] = frameLength
             attackEvent.fields["query"] = query
             attackEvent.fields["queryClass"] = queryClass
