@@ -180,8 +180,7 @@ class CyberTop(pyinotify.ProcessEvent):
 
             # Appends everything to the dashboard dump file.
             if self.configParser.has_option("global", "dashboardFile"):
-                with open(self.configParser.get("global", "dashboardFile"),
-                    "a") as f:
+                with open(self.configParser.get("global", "dashboardFile"), "w") as f:
                     f.write(message)
         except BaseException as e:
             LOG.critical(str(e))
