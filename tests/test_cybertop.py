@@ -246,13 +246,13 @@ class TestHSPLMerging(BasicTest):
         """
         Tests that any ports merging.
         """
-        self._doObjectTest("Very low-DoS-4.csv", "landscape1.xml", 10, None, ["91.211.1.100:*"])
+        self._doObjectTest("Very low-DoS-4.csv", "landscape1.xml", 10, ["91.211.1.100:*"])
 
     def test_mergeSubnets(self):
         """
         Tests the subnets merging.
         """
-        self._doObjectTest("Very low-DoS-5.csv", "landscape1.xml", 10, None, [
+        self._doObjectTest("Very low-DoS-5.csv", "landscape1.xml", 10, [
             "91.211.1.0/31:*",
             "91.211.1.2/31:*",
             "91.211.1.4/31:*",
