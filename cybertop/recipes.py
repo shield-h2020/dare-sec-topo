@@ -131,7 +131,7 @@ class RecipesReasoner(object):
                                 test = test or t
                             else:
                                 test = test and t
-                    if test:
+                    if not test:
                         validRecipes.add(i)
                         break
 
