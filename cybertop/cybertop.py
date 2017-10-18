@@ -63,9 +63,9 @@ class CyberTop(pyinotify.ProcessEvent):
         if len(c) > 0:
             LOG.debug("Configuration file '%s' read." % c[0])
         else:
-            LOG.critical("Cannot read the configuration file from '%s'." % 
+            LOG.critical("Cannot read the configuration file from '%s'." %
                          configurationFileName)
-            raise IOError("Cannot read the configuration file from '%s'" % 
+            raise IOError("Cannot read the configuration file from '%s'" %
                           configurationFileName)
 
         # Configures the plug-ins.
@@ -125,21 +125,28 @@ class CyberTop(pyinotify.ProcessEvent):
         @param foreground: A value stating if the daemon must be launched in foreground or background mode.
         """
         if (self.configParser.has_option("global", "dashboardHost") and
+            self.configParser.has_option("global", "dashboardPort") and
             self.configParser.has_option("global", "dashboardExchange") and
             self.configParser.has_option("global", "dashboardTopic") and
             self.configParser.has_option("global", "dashboardAttempts") and
                 self.configParser.has_option("global", "dashboardRetryDelay")):
 
             host = self.configParser.get("global", "dashboardHost")
+            port = self.configParser.getint("global", "dashboardPort")
             connectionAttempts = self.configParser.getint("global",
-                                                       "dashboardAttempts")
-            retryDelay = self.configParser.getint("global", "dashboardRetryDelay")
+                                                          "dashboardAttempts")
+            retryDelay = self.configParser.getint("global",
+                                                  "dashboardRetryDelay")
+            LOG.debug("AMQP host is " + host + ":" + str(port))
             connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host=host,
+                port=port,
                 connection_attempts=connectionAttempts,
                 retry_delay=retryDelay))
             self.channel = connection.channel()
-            self.channel.exchange_declare(exchange=self.configParser.get("global", "dashboardExchange"))
+            self.channel.exchange_declare(exchange=self.configParser.
+                                          get("global", "dashboardExchange"),
+                                          exchange_type='topic')
             LOG.info("Connected to the dashboard.")
         else:
             self.channel = None
@@ -159,32 +166,43 @@ class CyberTop(pyinotify.ProcessEvent):
         @param event: The file event.
         """
         try:
+            # First, translate the CSV in HSPL, MSPL sets
             [hsplSet, msplSet] = self.getMSPLs(event.pathname,
-                self.configParser.get("global", "landscapeFile"))
-            hsplString = etree.tostring(hsplSet).decode()
-            msplString = etree.tostring(msplSet).decode()
+                                               self.configParser.
+                                               get("global",
+                                                   "landscapeFile"))
 
-            content = self.configParser.get("global", "dashboardContent")
-            if content == "HSPL":
-                message = hsplString
-            elif content == "MSPL":
-                message = msplString
-            else:
-                message = hsplString + msplString
+            # Then, if extra logging is activated, print HSPL (and/or MSPL)
+            # to an external file
+            if self.configParser.has_option("global", "hsplsFile"):
+                with open(self.configParser.get("global", "hsplsFile"), "w") as f:
+                    f.write(etree.tostring(hsplSet, pretty_print=True).
+                            decode())
+            if self.configParser.has_option("global", "msplsFile"):
+                with open(self.configParser.get("global", "msplsFile"), "w") as f:
+                    f.write(etree.tostring(msplSet, pretty_print=True).
+                            decode())
 
-            # Sends everything to RabbitMQ.
+            # Finally, sends everything to RabbitMQ.
             if self.channel is not None:
+                hsplString = etree.tostring(hsplSet).decode()
+                msplString = etree.tostring(msplSet).decode()
+                content = self.configParser.get("global", "dashboardContent")
+                if content == "HSPL":
+                    message = hsplString
+                elif content == "MSPL":
+                    message = msplString
+                else:
+                    message = hsplString + msplString
+
+                LOG.info("Pushing the remediation to the dashboard")
                 exchange = self.configParser.get("global", "dashboardExchange")
                 topic = self.configParser.get("global", "dashboardTopic")
                 self.channel.basic_publish(exchange=exchange,
-                    routing_key=topic, body=message)
+                                           routing_key=topic, body=message)
+                LOG.debug("RabbitMQ exchange: " + exchange + " topic: " +
+                          topic)
+                LOG.info("Remediation correctly forwarded to the dashboard")
 
-            # Appends everything to the dashboard dump files.
-            if self.configParser.has_option("global", "hsplsFile"):
-                with open(self.configParser.get("global", "hsplsFile"), "w") as f:
-                    f.write(etree.tostring(hsplSet, pretty_print = True).decode())
-            if self.configParser.has_option("global", "msplsFile"):
-                with open(self.configParser.get("global", "msplsFile"), "w") as f:
-                    f.write(etree.tostring(msplSet, pretty_print = True).decode())
         except BaseException as e:
             LOG.critical(str(e))
