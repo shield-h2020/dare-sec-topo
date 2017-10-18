@@ -124,12 +124,13 @@ class CyberTop(pyinotify.ProcessEvent):
         Starts the CyberTop policy engine
         @param foreground: A value stating if the daemon must be launched in foreground or background mode.
         """
-        if (self.configParser.has_option("global", "dashboardURL") and
-            self.configParser.has_option("global", "dashboardQueue") and
+        if (self.configParser.has_option("global", "dashboardHost") and
+            self.configParser.has_option("global", "dashboardExchange") and
+            self.configParser.has_option("global", "dashboardTopic") and
             self.configParser.has_option("global", "dashboardAttempts") and
                 self.configParser.has_option("global", "dashboardRetryDelay")):
 
-            host = self.configParser.get("global", "dashboardURL")
+            host = self.configParser.get("global", "dashboardHost")
             connectionAttempts = self.configParser.getint("global",
                                                        "dashboardAttempts")
             retryDelay = self.configParser.getint("global", "dashboardRetryDelay")
@@ -138,8 +139,7 @@ class CyberTop(pyinotify.ProcessEvent):
                 connection_attempts=connectionAttempts,
                 retry_delay=retryDelay))
             self.channel = connection.channel()
-            self.channel.queue_declare(
-                queue=self.configParser.get("global", "dashboardQueue"))
+            self.channel.exchange_declare(exchange=self.configParser.get("global", "dashboardExchange"))
             LOG.info("Connected to the dashboard.")
         else:
             self.channel = None
@@ -174,9 +174,10 @@ class CyberTop(pyinotify.ProcessEvent):
 
             # Sends everything to RabbitMQ.
             if self.channel is not None:
-                queue = self.configParser.get("global", "dashboardQueue")
-                self.channel.basic_publish(exchange="",
-                    routing_key=queue, body=message)
+                exchange = self.configParser.get("global", "dashboardExchange")
+                topic = self.configParser.get("global", "dashboardTopic")
+                self.channel.basic_publish(exchange=exchange,
+                    routing_key=topic, body=message)
 
             # Appends everything to the dashboard dump files.
             if self.configParser.has_option("global", "hsplsFile"):
