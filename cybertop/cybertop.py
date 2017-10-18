@@ -130,9 +130,9 @@ class CyberTop(pyinotify.ProcessEvent):
                 self.configParser.has_option("global", "dashboardRetryDelay")):
 
             host = self.configParser.get("global", "dashboardURL")
-            connectionAttempts = self.configParser.get("global",
+            connectionAttempts = self.configParser.getint("global",
                                                        "dashboardAttempts")
-            retryDelay = self.configParser.get("global", "dashboardRetryDelay")
+            retryDelay = self.configParser.getint("global", "dashboardRetryDelay")
             connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host=host,
                 connection_attempts=connectionAttempts,
@@ -178,9 +178,12 @@ class CyberTop(pyinotify.ProcessEvent):
                 self.channel.basic_publish(exchange="",
                     routing_key=queue, body=message)
 
-            # Appends everything to the dashboard dump file.
-            if self.configParser.has_option("global", "dashboardFile"):
-                with open(self.configParser.get("global", "dashboardFile"), "w") as f:
-                    f.write(message)
+            # Appends everything to the dashboard dump files.
+            if self.configParser.has_option("global", "hsplsFile"):
+                with open(self.configParser.get("global", "hsplsFile"), "w") as f:
+                    f.write(etree.tostring(hsplSet, pretty_print = True).decode())
+            if self.configParser.has_option("global", "msplsFile"):
+                with open(self.configParser.get("global", "msplsFile"), "w") as f:
+                    f.write(etree.tostring(msplSet, pretty_print = True).decode())
         except BaseException as e:
             LOG.critical(str(e))
