@@ -11,7 +11,7 @@
 		</object-constraints>
 		<traffic-constraints>
 			<max-connections>20</max-connections>
-			<rate-limit>100/s</rate-limit>
+			<rate-limit>100kbit/s</rate-limit>
 		</traffic-constraints>
 	</recipe>
 
