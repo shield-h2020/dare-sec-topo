@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<landscape xmlns="http://security.polito.it/shield/landscape"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://security.polito.it/shield/landscape ../xsd/landscape.xsd ">
+	
+	<it-resource id="vNSF-filtering">
+		<capability>filtering.basic</capability>
+		<capability>filtering.limit</capability>
+	</it-resource>
+	
+</landscape>

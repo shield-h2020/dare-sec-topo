@@ -1,0 +1,9 @@
+[Core]
+Name = Query length digits
+Module = FilterQueryDigits
+Tag = query-digits
+
+[Documentation]
+Description = The query digits filter.
+Version = 0.1
+Author = Daniele Canavese

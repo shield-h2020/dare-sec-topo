@@ -1,0 +1,9 @@
+[Core]
+Name = Input bytes filter
+Module = FilterInputBytes
+Tag = input-bytes
+
+[Documentation]
+Description = The input bytes filter.
+Version = 0.1
+Author = Daniele Canavese

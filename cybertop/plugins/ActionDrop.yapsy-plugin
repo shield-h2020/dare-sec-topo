@@ -1,0 +1,11 @@
+[Core]
+Name = Drop action
+Module = ActionDrop
+Capabilities = filtering.basic
+Action = drop
+Score = 1
+
+[Documentation]
+Description = The drop action plug-in.
+Version = 0.1
+Author = Daniele Canavese

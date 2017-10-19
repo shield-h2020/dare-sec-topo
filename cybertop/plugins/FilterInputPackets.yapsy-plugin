@@ -1,0 +1,9 @@
+[Core]
+Name = Input packets filter
+Module = FilterInputPackets
+Tag = input-packets
+
+[Documentation]
+Description = The input packets filter.
+Version = 0.1
+Author = Daniele Canavese

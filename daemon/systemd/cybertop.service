@@ -1,0 +1,11 @@
+[Unit]
+Description=Cybersecurity Topologies daemon
+After=multi-user.target
+
+[Service]
+EnvironmentFile=-/etc/default/cybertop
+ExecStart=/usr/local/bin/cybertop-daemon -c $CYBERTOP_CONF -l $CYBERTOP_LOG_CONF
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

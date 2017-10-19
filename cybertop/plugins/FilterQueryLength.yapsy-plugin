@@ -1,0 +1,9 @@
+[Core]
+Name = Query length filter
+Module = FilterQueryLength
+Tag = query-length
+
+[Documentation]
+Description = The query length filter.
+Version = 0.1
+Author = Daniele Canavese
