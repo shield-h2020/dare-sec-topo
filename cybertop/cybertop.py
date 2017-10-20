@@ -77,19 +77,19 @@ class CyberTop(pyinotify.ProcessEvent):
         self.pluginManager.collectPlugins()
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Parser"))
         if pluginsCount > 1:
-            LOG.debug("Found %d attack event parser plug-ins.", pluginsCount)
+            LOG.info("Found %d attack event parser plug-ins.", pluginsCount)
         else:
-            LOG.debug("Found %d attack event parser plug-in.", pluginsCount)
+            LOG.info("Found %d attack event parser plug-in.", pluginsCount)
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Filter"))
         if pluginsCount > 1:
-            LOG.debug("Found %d attack event filter plug-ins.", pluginsCount)
+            LOG.info("Found %d attack event filter plug-ins.", pluginsCount)
         else:
-            LOG.debug("Found %d attack event filter plug-in.", pluginsCount)
+            LOG.info("Found %d attack event filter plug-in.", pluginsCount)
         pluginsCount = len(self.pluginManager.getPluginsOfCategory("Action"))
         if pluginsCount > 1:
-            LOG.debug("Found %d action plug-ins.", pluginsCount)
+            LOG.info("Found %d action plug-ins.", pluginsCount)
         else:
-            LOG.debug("Found %d action plug-in.", pluginsCount)
+            LOG.info("Found %d action plug-in.", pluginsCount)
 
         # Loads all the sub-modules.
         self.parser = Parser(self.configParser, self.pluginManager)
@@ -124,32 +124,6 @@ class CyberTop(pyinotify.ProcessEvent):
         Starts the CyberTop policy engine
         @param foreground: A value stating if the daemon must be launched in foreground or background mode.
         """
-        if (self.configParser.has_option("global", "dashboardHost") and
-            self.configParser.has_option("global", "dashboardPort") and
-            self.configParser.has_option("global", "dashboardExchange") and
-            self.configParser.has_option("global", "dashboardTopic") and
-            self.configParser.has_option("global", "dashboardAttempts") and
-                self.configParser.has_option("global", "dashboardRetryDelay")):
-
-            host = self.configParser.get("global", "dashboardHost")
-            port = self.configParser.getint("global", "dashboardPort")
-            connectionAttempts = self.configParser.getint("global",
-                                                          "dashboardAttempts")
-            retryDelay = self.configParser.getint("global",
-                                                  "dashboardRetryDelay")
-            LOG.debug("AMQP host is " + host + ":" + str(port))
-            connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=host,
-                port=port,
-                connection_attempts=connectionAttempts,
-                retry_delay=retryDelay))
-            self.channel = connection.channel()
-            self.channel.exchange_declare(exchange=self.configParser.
-                                          get("global", "dashboardExchange"),
-                                          exchange_type='topic')
-            LOG.info("Connected to the dashboard.")
-        else:
-            self.channel = None
 
         wm = pyinotify.WatchManager()
         notifier = pyinotify.Notifier(wm, self)
@@ -184,7 +158,31 @@ class CyberTop(pyinotify.ProcessEvent):
                             decode())
 
             # Finally, sends everything to RabbitMQ.
-            if self.channel is not None:
+
+            if (self.configParser.has_option("global", "dashboardHost") and
+                self.configParser.has_option("global", "dashboardPort") and
+                self.configParser.has_option("global", "dashboardExchange") and
+                self.configParser.has_option("global", "dashboardTopic") and
+                self.configParser.has_option("global", "dashboardAttempts") and
+                    self.configParser.has_option("global", "dashboardRetryDelay")):
+
+                host = self.configParser.get("global", "dashboardHost")
+                port = self.configParser.getint("global", "dashboardPort")
+                connectionAttempts = self.configParser.getint("global",
+                                                              "dashboardAttempts")
+                retryDelay = self.configParser.getint("global",
+                                                      "dashboardRetryDelay")
+                connection = pika.BlockingConnection(pika.ConnectionParameters(
+                    host=host,
+                    port=port,
+                    connection_attempts=connectionAttempts,
+                    retry_delay=retryDelay,
+                    blocked_connection_timeout=300))
+                self.channel = connection.channel()
+                self.channel.exchange_declare(exchange=self.configParser.
+                                              get("global", "dashboardExchange"),
+                                              exchange_type='topic')
+                LOG.info("Connected to the dashboard at " + host + ":" + str(port))
                 hsplString = etree.tostring(hsplSet).decode()
                 msplString = etree.tostring(msplSet).decode()
                 content = self.configParser.get("global", "dashboardContent")
@@ -202,7 +200,11 @@ class CyberTop(pyinotify.ProcessEvent):
                                            routing_key=topic, body=message)
                 LOG.debug("RabbitMQ exchange: " + exchange + " topic: " +
                           topic)
-                LOG.info("Remediation correctly forwarded to the dashboard")
-
+                LOG.info("Remediation forwarded to the dashboard")
+                self.channel.close()
+                LOG.info("Connection with the dashboard closed")
         except BaseException as e:
             LOG.critical(str(e))
+            if self.channel is not None:
+                if not self.channel.is_closed:
+                    self.channel.close()
