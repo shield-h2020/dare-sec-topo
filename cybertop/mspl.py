@@ -1,11 +1,11 @@
 # Copyright 2017 Politecnico di Torino
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,7 +31,7 @@ class MSPLReasoner(object):
     """
     Finds the MSPLs that can be used to mitigate an attack.
     """
-    
+
     def __init__(self, configParser, pluginManager):
         """
         Constructor.
@@ -40,7 +40,7 @@ class MSPLReasoner(object):
         """
         self.configParser = configParser
         self.pluginManager = pluginManager
-    
+
     def getMSPLs(self, hsplSet, landscape):
         """
         Retrieve the HSPLs that can be used to mitigate an attack.
@@ -51,38 +51,38 @@ class MSPLReasoner(object):
         """
         if hsplSet is None:
             return None
-        
+
         schema = etree.XMLSchema(etree.parse(getMSPLXSDFile()))
-        
+
         msplSet = etree.Element("{%s}mspl-set" % getMSPLNamespace(), nsmap = {None : getMSPLNamespace(), "xsi" : getXSINamespace()})
-            
+
         # Gather some data about the recipe.
         msplSeverity = hsplSet.findtext("{%s}context/{%s}severity" % (getHSPLNamespace(), getHSPLNamespace()))
         msplType = hsplSet.findtext("{%s}context/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
         msplTimestamp = hsplSet.findtext("{%s}context/{%s}timestamp" % (getHSPLNamespace(), getHSPLNamespace()))
-        
+
         # Adds the context.
         context = etree.SubElement(msplSet, "{%s}context" % getMSPLNamespace())
         etree.SubElement(context, "{%s}severity" % getMSPLNamespace()).text = msplSeverity
         etree.SubElement(context, "{%s}type" % getMSPLNamespace()).text = msplType
         etree.SubElement(context, "{%s}timestamp" % getMSPLNamespace()).text = msplTimestamp
-        
+
         # Finds a plug-in that can create a configured IT resource.
         [plugin, identifier] = self.__findLocation(hsplSet, landscape)
         plugin.plugin_object.setup(self.configParser)
-        
+
         # Creates the IT resource.
         itResource = etree.SubElement(msplSet, "{%s}it-resource" % getMSPLNamespace(), {"id" : identifier})
-        
+
         # Calls the plug-in to configure the IT resource.
         plugin.plugin_object.configureITResource(itResource, hsplSet)
-        
+
         if schema.validate(msplSet):
             msplCount = len(msplSet.getchildren()) - 1
             if msplCount == 1:
-                LOG.info("%d MSPL generated.", msplCount)
+                LOG.info("%d MSPL set generated.", msplCount)
             else:
-                LOG.info("%d MSPLs generated.", msplCount)
+                LOG.info("%d MSPLs sets generated.", msplCount)
 
             LOG.debug(etree.tostring(msplSet, pretty_print = True).decode())
 
@@ -90,7 +90,7 @@ class MSPLReasoner(object):
         else:
             LOG.critical("Invalid MSPL set generated.")
             raise SyntaxError("Invalid MSPL set generated.")
-    
+
     def __findLocation(self, hsplSet, landscape):
         """
         Finds a suitable plug-in and location for the HSPL refinement.
@@ -109,17 +109,17 @@ class MSPLReasoner(object):
                     if pluginCapabilities.issubset(capabilities):
                         plugins.add(i)
                         identifiers.add(identifier)
-        
+
         # Picks a random plug-in.
         if len(plugins) == 0:
             plugin = None
         else:
             plugin = random.sample(plugins, 1)[0]
-        
+
         # Picks a random identifier.
         if len(identifiers) == 0:
             identifier = None
         else:
             identifier = random.sample(identifiers, 1)[0]
-            
+
         return [plugin, identifier]
