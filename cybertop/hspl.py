@@ -1,11 +1,11 @@
 # Copyright 2017 Politecnico di Torino
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +30,7 @@ class HSPLReasoner(object):
     """
     Finds the HSPLs that can be used to mitigate an attack.
     """
-    
+
     def __init__(self, configParser, pluginManager):
         """
         Constructor.
@@ -39,7 +39,7 @@ class HSPLReasoner(object):
         """
         self.configParser = configParser
         self.pluginManager = pluginManager
-        
+
     def getHSPLs(self, attack, recipe, landscape):
         """
         Retrieve the HSPLs that can be used to mitigate an attack.
@@ -51,11 +51,11 @@ class HSPLReasoner(object):
         """
         if recipe is None:
             return None
-        
+
         schema = etree.XMLSchema(etree.parse(getHSPLXSDFile()))
-        
+
         hsplSet = etree.Element("{%s}hspl-set" % getHSPLNamespace(), nsmap = {None : getHSPLNamespace(), "xsi" : getXSINamespace()})
-        
+
         # Gather some data about the recipe.
         recipeName = recipe.findtext("{%s}name" % getRecipeNamespace())
         recipeAction = recipe.findtext("{%s}action" % getRecipeNamespace())
@@ -63,13 +63,13 @@ class HSPLReasoner(object):
         recipeType = recipe.findtext("{%s}traffic-constraints/{%s}type" % (getRecipeNamespace(), getRecipeNamespace()))
         recipeMaxConnections = recipe.findtext("{%s}traffic-constraints/{%s}max-connections" % (getRecipeNamespace(), getRecipeNamespace()))
         recipeRateLimit = recipe.findtext("{%s}traffic-constraints/{%s}rate-limit" % (getRecipeNamespace(), getRecipeNamespace()))
-        
+
         # Adds the context.
         context = etree.SubElement(hsplSet, "{%s}context" % getHSPLNamespace())
         etree.SubElement(context, "{%s}severity" % getHSPLNamespace()).text = str(attack.severity)
         etree.SubElement(context, "{%s}type" % getHSPLNamespace()).text = attack.type
         etree.SubElement(context, "{%s}timestamp" % getHSPLNamespace()).text = attack.getTimestamp().isoformat()
-        
+
         # Filters the events.
         events = []
         recipeFilters = recipe.find("{%s}filters" % getRecipeNamespace())
@@ -95,7 +95,7 @@ class HSPLReasoner(object):
                             test = test and t
                 if not test:
                     events.append(i)
-                
+
         # Adds an HSPL for each event.
         count = 0
         for i in events:
@@ -121,19 +121,19 @@ class HSPLReasoner(object):
                 etree.SubElement(trafficConstraints, "{%s}max-connections" % getHSPLNamespace()).text = recipeMaxConnections
             if recipeRateLimit is not None:
                 etree.SubElement(trafficConstraints, "{%s}rate-limit" % getHSPLNamespace()).text = recipeRateLimit
-        
+
         if schema.validate(hsplSet):
             hsplSet = self.__cleanAndMerge(hsplSet)
-        
+
             for i in hsplSet.findall("{%s}hspl" % getHSPLNamespace()):
                 hsplSubject = i.findtext("{%s}subject" % getHSPLNamespace())
                 hsplAction = i.findtext("{%s}action" % getHSPLNamespace())
                 hsplObject = i.findtext("{%s}object" % getHSPLNamespace())
                 hsplType = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
-                LOG.info("HPLS (%s, %s(%s), %s) generated." % (hsplSubject, hsplAction, hsplType, hsplObject))
-                
+                LOG.info("HSPL rule (%s, %s(%s), %s) generated." % (hsplSubject, hsplAction, hsplType, hsplObject))
+
             LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
-            
+
             return hsplSet
         else:
             LOG.critical("Invalid HSPL set generated.")
@@ -148,7 +148,7 @@ class HSPLReasoner(object):
         hsplMergeInclusions = int(self.configParser.getboolean("global", "hsplMergeInclusions"))
         hsplMergeWithAnyPorts = int(self.configParser.getboolean("global", "hsplMergeWithAnyPorts"))
         hsplMergeWithSubnets = int(self.configParser.getboolean("global", "hsplMergeWithSubnets"))
-        
+
         if not hsplMergeInclusions and not hsplMergeWithAnyPorts and not hsplMergeWithSubnets:
             return hsplSet
 
@@ -157,13 +157,13 @@ class HSPLReasoner(object):
             LOG.info("%d initial HSPL generated.", hsplCount)
         else:
             LOG.info("%d initial HSPLs generated.", hsplCount)
-                        
+
         # Pass 0: create the map.
         hsplMap = HSPLMap()
         for i in hsplSet:
             if i.tag == "{%s}hspl" % getHSPLNamespace():
                 hsplMap.add(i)
-        
+
         # Pass 1: removes the included HSPLs.
         if hsplMergeInclusions:
             includedHSPLs = self.__mergeInclusions(hsplSet, hsplMap)
@@ -171,7 +171,7 @@ class HSPLReasoner(object):
                 LOG.debug("%d included HSPLs removed.", includedHSPLs)
             else:
                 LOG.debug("%d included HSPL removed.", includedHSPLs)
-         
+
         # Pass 2: merges the IP address using * as the port number.
         if hsplMergeWithAnyPorts:
             mergedHSPLs = self.__mergeWithAnyPorts(hsplSet, hsplMap)
@@ -179,7 +179,7 @@ class HSPLReasoner(object):
                 LOG.debug("%d HSPLs merged using any ports.", mergedHSPLs)
             else:
                 LOG.debug("%d HSPL merged using any port.", mergedHSPLs)
-         
+
         # Pass 3: merges the HSPLs, if needed.
         if hsplMergeWithSubnets:
             mergedHSPLs = self.__mergeWithSubnets(hsplSet, hsplMap)
@@ -187,7 +187,7 @@ class HSPLReasoner(object):
                 LOG.debug("%d HSPLs merged using subnets.", mergedHSPLs)
             else:
                 LOG.debug("%d HSPL merged using subnets.", mergedHSPLs)
-        
+
         hsplCount = len(hsplSet.getchildren()) - 1
         if hsplCount == 1:
             LOG.info("%d HSPL remaining.", hsplCount)
@@ -227,7 +227,7 @@ class HSPLReasoner(object):
 
         if subject1 == subject2 and action1 == action2 and objectCheck and self.__checkEqualXML(trafficConstraints1, trafficConstraints2):
             return True
-        
+
         return False
 
     def __checkEqualXML(self, tree1, tree2):
@@ -247,7 +247,7 @@ class HSPLReasoner(object):
             return False
         if len(tree1) != len(tree2):
             return False
-        
+
         return all(self.__checkEqualXML(c1, c2) for c1, c2 in zip(tree1, tree2))
 
     def __getHash(self, hspl):
@@ -264,7 +264,7 @@ class HSPLReasoner(object):
         h = 37 * h + hash(etree.tostring(action))
         h = 37 * h + hash(etree.tostring(trafficConstraints))
         return h
-    
+
     def __mergeInclusions(self, hsplSet, hsplMap):
         """
         Merges the included HSPLs.
@@ -273,7 +273,7 @@ class HSPLReasoner(object):
         @return: The number of included HSPLs removed.
         """
         hspls = set()
-        
+
         for i in hsplMap.getHSPLs():
             if i not in hspls:
                 inclusions = hsplMap.find(i)
@@ -293,10 +293,10 @@ class HSPLReasoner(object):
         @return: The number of merged HSPLs removed.
         """
         hsplMergingThreshold = int(self.configParser.get("global", "hsplMergingThreshold"))
-        
+
         if len(hsplSet) <= hsplMergingThreshold:
             return 0
-        
+
         hspls = set()
         mergedHSPLs = []
 
@@ -306,7 +306,7 @@ class HSPLReasoner(object):
                 if len(inclusions) > 1:
                     mergedHSPLs.append(inclusions)
                     hspls.update(inclusions)
-                
+
         for i in mergedHSPLs:
             s = set(i)
             first = s.pop()
@@ -331,19 +331,19 @@ class HSPLReasoner(object):
         hsplMergingMinBits = int(self.configParser.get("global", "hsplMergingMinBits"))
         hsplMergingMaxBits = int(self.configParser.get("global", "hsplMergingMaxBits"))
         bits = hsplMergingMinBits
-        
+
         merged = set()
         while len(hsplMap.getHSPLs()) > hsplMergingThreshold and bits >= hsplMergingMaxBits:
             hspls = set()
             mergedHSPLs = []
-            
+
             for i in hsplMap.getHSPLs():
                 if i not in hspls:
                     inclusions = hsplMap.find(i, bits, True)
                     if len(inclusions) > 1:
                         mergedHSPLs.append(inclusions)
                         hspls.update(inclusions)
-                        
+
             for i in mergedHSPLs:
                 s = set(i)
                 first = s.pop()
@@ -357,9 +357,9 @@ class HSPLReasoner(object):
                     hsplMap.remove(j)
                     hsplSet.remove(j)
                 merged.update(s)
-                
+
             bits -= 1
-        
+
         return len(merged)
 
 class HSPLMap:
@@ -372,7 +372,7 @@ class HSPLMap:
     Note that a single HSPL can appear in several different buckets.
     Note also that single IPv4 addresses are treated as networks with a prefix length of 32.
     """
-    
+
     def __init__(self):
         """
         Creates an empty map.
@@ -402,7 +402,7 @@ class HSPLMap:
         """
         hsplObject = hspl.findtext("{%s}object" % getHSPLNamespace())
         m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", hsplObject)
-        
+
         if m:
             key = self.__getHash(hspl)
             address = ip_network(m.group(1))
@@ -426,22 +426,22 @@ class HSPLMap:
                 if port not in mapPort:
                     mapPort[port] = set()
                 mapPort[port].add(hspl)
-            
+
                 self.__hspls.add(hspl)
 
     def find(self, hspl, forcePrefixLength = None, forceAnyPort = False):
         """
         Finds all the inclusions of a HSPLs.
         @param hspl: The HSPL to search for the inclusions.
-        @param forcePrefixLength: The prefix length to use for the search or None to use the HSPL prefix length. 
+        @param forcePrefixLength: The prefix length to use for the search or None to use the HSPL prefix length.
         @param forceAnyPort: A value stating if we want to force an any port address or keep the original value.
         @return: The set of HSPLs included by the passed HSPL.
         """
         inclusions = set()
-        
+
         hsplObject = hspl.findtext("{%s}object" % getHSPLNamespace())
         m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", hsplObject)
-        
+
         if m:
             key = self.__getHash(hspl)
             address = ip_network(m.group(1))
@@ -461,9 +461,9 @@ class HSPLMap:
                     mapPort = mapAddresses[n]
                     if port in mapPort:
                         inclusions.update(mapPort[port])
-            
+
         return inclusions
-    
+
     def remove(self, hspl):
         """
         Removes an HSPL from the map.
@@ -492,10 +492,10 @@ class HSPLMap:
                             mapPort[port].remove(hspl)
                         if port != "*" and "*" in mapPort:
                             mapPort["*"].remove(hspl)
-            
+
             if hspl in self.__hspls:
                 self.__hspls.remove(hspl)
-            
+
     def getHSPLs(self):
         """
         Retrieves the set of all the HSPLs inserted.
