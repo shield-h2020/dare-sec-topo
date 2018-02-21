@@ -1,11 +1,11 @@
 # Copyright 2017 Politecnico di Torino
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,7 +29,7 @@ class ParserDoS(ParserPlugin):
     """
     Parses a DoS attack event.
     """
-    
+
     def parse(self, fileName, count, line):
         """
         Parses an event line.
@@ -41,14 +41,14 @@ class ParserDoS(ParserPlugin):
         """
         if re.match("\s*#.*", line):
             return None
-        
+
         parts = re.split("\s*,\s*|\s+", line.rstrip())
-        
+
         if parts == [""]:
             return None
 
         try:
-            timestamp = parser.parse("%s %s %s %s %s" % (parts[0], parts[1], parts[2], parts[3], parts[4]))
+            timestamp = parser.parse("%s %s %s %s" % (parts[0], parts[1], parts[2], parts[3].split('.')[0]))
             frameLength = int(parts[6])
             destinationAddress = ipaddress.ip_address(parts[7])
             query = parts[8]
