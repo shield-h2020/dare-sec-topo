@@ -1,0 +1,10 @@
+[Core]
+Name = Cryptojacking attack event parser
+Module = ParserCryptojacking
+Attack = Cryptojacking
+FileName = Cryptojacking|Cryptocurrency Mining
+
+[Documentation]
+Description = The cryptojacking attack event parser plug-in.
+Version = 0.1
+Author = Daniele Canavese
