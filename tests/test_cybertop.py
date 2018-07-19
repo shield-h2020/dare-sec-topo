@@ -244,6 +244,18 @@ class TestDNSTunneling(BasicTest):
         self._doHSPLTest("High-DNS tunneling-3.csv", "landscape1.xml", ["TCP+UDP"] * 3, ["drop"] * 3, ["0.0.0.0/0:53"] * 3)
         self._doHSPLTest("High-DNS tunneling-3.csv", "landscape2.xml", ["TCP+UDP"] * 3, ["drop"] * 3, ["0.0.0.0/0:53"] * 3)
 
+class TestCryptojacking(BasicTest):
+    """
+    Tests the cryptojacking attack responses.
+    """
+        
+    def test_lowCryptojacking(self):
+        """
+        Tests the cryptojacking, low severity.
+        """
+        self._doHSPLTest("Low-Cryptocurrency Mining-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["35.177.197.177:3333", "10.0.2.15:34991"], ["34991", "3333"])
+        self._doHSPLTest("Low-Cryptocurrency Mining-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["35.177.197.177:3333", "10.0.2.15:34991"], ["34991", "3333"])
+
 class TestHSPLMerging(BasicTest):
     """
     Tests the HSPL merging.
