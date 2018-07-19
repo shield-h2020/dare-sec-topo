@@ -48,6 +48,7 @@ limitations under the License.
 					<restriction base="string">
 						<enumeration value="DoS" />
 						<enumeration value="DNS tunneling" />
+						<enumeration value="Cryptojacking" />
 					</restriction>
 				</simpleType>
 			</element>
