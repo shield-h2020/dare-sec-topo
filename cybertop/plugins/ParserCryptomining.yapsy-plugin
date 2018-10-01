@@ -1,0 +1,10 @@
+[Core]
+Name = Cryptomining attack event parser
+Module = ParserCryptomining
+Attack = Cryptomining
+FileName = Cryptocurrency Mining
+
+[Documentation]
+Description = The cryptomining attack event parser plug-in.
+Version = 0.1
+Author = Daniele Canavese

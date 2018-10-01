@@ -1,0 +1,10 @@
+[Core]
+Name = Worm attack event parser
+Module = ParserWorm
+Attack = Worm
+FileName = Worm
+
+[Documentation]
+Description = The Worm attack event parser plug-in.
+Version = 0.1
+Author = Daniele Canavese

@@ -1,5 +1,4 @@
-#
-# Copyright 2017 Politecnico di Torino
+## Copyright 2017 Politecnico di Torino
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +29,7 @@ def start(args):
     """Start action of the daemon
     """
     cybertop = CyberTop(args.conf, args.log_conf)
-    cybertop.start(not args.interactive)
+    cybertop.listenRabbitMQ()
 
 
 class CyberTopDaemon(object):
@@ -71,12 +70,6 @@ class CyberTopDaemon(object):
             default="./logging.ini",
             required=True,
             help="Specifies the logging configuration file"
-        )
-
-        p.add_argument(
-            "-i",
-            "--interactive",
-            action='store_true'
         )
 
         args = p.parse_args()

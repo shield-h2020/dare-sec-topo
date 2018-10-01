@@ -38,7 +38,7 @@ class ParserPlugin(IPlugin):
     def parse(self, fileName, count, line):
         """
         Parses an event line.
-        @param fileName: The current file name.
+        @param fileName: The current file name or None if this is a list.
         @param count: The current line count.
         @param line: The line to parse.
         @return: The attack event or None if this line should be silently ignored.
