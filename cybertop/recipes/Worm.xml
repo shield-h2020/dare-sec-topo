@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<recipe-set minSeverity="1" maxSeverity="4" type="Worm"
+	xmlns="http://security.polito.it/shield/recipe" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://security.polito.it/shield/recipe ../xsd/recipe.xsd ">
+
+	<recipe>
+		<name>drop packets</name>
+		<action>drop</action>
+		<subject-constraints>
+			<any-address>true</any-address>
+			<any-port>true</any-port>
+		</subject-constraints>
+		<object-constraints>
+			<any-port>true</any-port>
+		</object-constraints>
+	</recipe>
+
+</recipe-set>

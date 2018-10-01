@@ -256,6 +256,18 @@ class TestCryptomining(BasicTest):
         self._doHSPLTest("Low-Cryptocurrency Mining-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["35.177.197.177:3333", "10.0.2.15:34991"], ["34991", "3333"])
         self._doHSPLTest("Low-Cryptocurrency Mining-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["35.177.197.177:3333", "10.0.2.15:34991"], ["34991", "3333"])
 
+class TestWorm(BasicTest):
+    """
+    Tests the Worm attack responses.
+    """
+        
+    def test_highWorm(self):
+        """
+        Tests the worm, high severity.
+        """
+        self._doHSPLTest("High-Worm-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["*:*", "*:*"], ["*", "*"])
+        self._doHSPLTest("High-Worm-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["*:*", "*:*"], ["*", "*"])
+
 class TestHSPLMerging(BasicTest):
     """
     Tests the HSPL merging.

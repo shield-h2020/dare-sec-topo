@@ -59,6 +59,9 @@ class HSPLReasoner(object):
         # Gather some data about the recipe.
         recipeName = recipe.findtext("{%s}name" % getRecipeNamespace())
         recipeAction = recipe.findtext("{%s}action" % getRecipeNamespace())
+        recipeSubjectAnyAddress = recipe.findtext("{%s}subject-constraints/{%s}any-address" % (getRecipeNamespace(), getRecipeNamespace()))
+        recipeSubjectAnyPort = recipe.findtext("{%s}subject-constraints/{%s}any-port" % (getRecipeNamespace(), getRecipeNamespace()))
+        recipeObjectAnyAddress = recipe.findtext("{%s}object-constraints/{%s}any-address" % (getRecipeNamespace(), getRecipeNamespace()))
         recipeObjectAnyPort = recipe.findtext("{%s}object-constraints/{%s}any-port" % (getRecipeNamespace(), getRecipeNamespace()))
         recipeType = recipe.findtext("{%s}traffic-constraints/{%s}type" % (getRecipeNamespace(), getRecipeNamespace()))
         recipeMaxConnections = recipe.findtext("{%s}traffic-constraints/{%s}max-connections" % (getRecipeNamespace(), getRecipeNamespace()))
@@ -102,15 +105,23 @@ class HSPLReasoner(object):
             count += 1
             hspl = etree.SubElement(hsplSet, "{%s}hspl" % getHSPLNamespace())
             etree.SubElement(hspl, "{%s}name" % getHSPLNamespace()).text = "%s #%d" % (recipeName, count)
-            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = i.target
+            m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", i.target)
+            targetAddress = m.group(1)
+            targetPort = m.group(4)
+            if recipeSubjectAnyAddress is not None:
+                targetAddress = "*"
+            if recipeSubjectAnyPort is not None:
+                targetPort = "*"
+            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = "%s:%s" % (targetAddress, targetPort)
             etree.SubElement(hspl, "{%s}action" % getHSPLNamespace()).text = recipeAction
-            attacker = i.attacker
+            m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", i.attacker)
+            attackerAddress = m.group(1)
+            attackerPort = m.group(4)
+            if recipeObjectAnyAddress is not None:
+                attackerAddress = "*"
             if recipeObjectAnyPort is not None:
-                m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", i.attacker)
-                if m:
-                    address = m.group(1)
-                    attacker = "%s:*" % address
-            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = attacker
+                attackerPort = "*"
+            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = "%s:%s" % (attackerAddress, attackerPort)
             trafficConstraints = etree.SubElement(hspl, "{%s}traffic-constraints" % getHSPLNamespace())
             if recipeType is not None:
                 eventType = recipeType
@@ -122,6 +133,8 @@ class HSPLReasoner(object):
             if recipeRateLimit is not None:
                 etree.SubElement(trafficConstraints, "{%s}rate-limit" % getHSPLNamespace()).text = recipeRateLimit
 
+        LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
+        
         if schema.validate(hsplSet):
             hsplSet = self.__cleanAndMerge(hsplSet)
 
@@ -131,8 +144,6 @@ class HSPLReasoner(object):
                 hsplObject = i.findtext("{%s}object" % getHSPLNamespace())
                 hsplType = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
                 LOG.info("HSPL rule (%s, %s(%s), %s) generated." % (hsplSubject, hsplAction, hsplType, hsplObject))
-
-            LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
 
             return hsplSet
         else:
