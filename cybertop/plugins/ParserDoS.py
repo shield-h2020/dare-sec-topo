@@ -33,17 +33,18 @@ class ParserDoS(ParserPlugin):
     def parse(self, fileName, count, line):
         """
         Parses an event line.
-        @param fileName: The current file name.
+        @param fileName: The current file name or None if this is a list.
         @param count: The current line count.
         @param line: The line to parse.
         @return: The attack event or None if this line should be silently ignored.
         @raise IOError: if the line contains something invalid.
         """
+        
         if re.match("\s*#.*", line):
             return None
         
         parts = re.split("\s*,\s*|\s+", line.rstrip())
-        
+                
         if parts == [""]:
             return None
         
@@ -70,6 +71,9 @@ class ParserDoS(ParserPlugin):
         except:
             if count == 1:
                 return None
+            elif fileName is None:
+                LOG.critical("The line %d has an invalid format.", count)
+                raise IOError("The line %d has an invalid format." % count)
             else:
                 LOG.critical("The line %d in the file '%s' has an invalid format.", count, fileName)
                 raise IOError("The line %d in the file '%s' has an invalid format." % (count, fileName))

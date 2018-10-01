@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 The CyberSecurity Topologies related stuff.
 
@@ -35,7 +34,10 @@ from cybertop import log
 from cybertop.log import LOG
 from cybertop.util import getPIDFile
 from cybertop.util import getConfigurationFile
-
+from csv import reader
+from csv import Sniffer
+from re import match
+from re import IGNORECASE
 
 class CyberTop(pyinotify.ProcessEvent):
     """
@@ -98,8 +100,11 @@ class CyberTop(pyinotify.ProcessEvent):
         self.hsplReasoner = HSPLReasoner(self.configParser, self.pluginManager)
         self.msplReasoner = MSPLReasoner(self.configParser, self.pluginManager)
         LOG.info("CyberSecurity Topologies initialized.")
+        
+        # Starts with no attack info.
+        self.attacks = {}
 
-    def getMSPLs(self, attackFileName, landscapeFileName):
+    def getMSPLsFromFile(self, attackFileName, landscapeFileName):
         """
         Retrieve the HSPLs that can be used to mitigate an attack.
         @param attackFileName: the name of the attack file to parse.
@@ -108,7 +113,8 @@ class CyberTop(pyinotify.ProcessEvent):
                  None if the attack is not manageable.
         @raise SyntaxError: When the generated XML is not valid.
         """
-        attack = self.parser.getAttack(attackFileName)
+        
+        attack = self.parser.getAttackFromFile(attackFileName)
         landscape = self.parser.getLandscape(landscapeFileName)
         recipe = self.recipesReasoner.getRecipe(attack, landscape)
         hsplSet = self.hsplReasoner.getHSPLs(attack, recipe, landscape)
@@ -119,9 +125,33 @@ class CyberTop(pyinotify.ProcessEvent):
         else:
             return [hsplSet, msplSet]
 
-    def start(self, foreground=False):
+    def getMSPLsFromList(self, identifier, severity, attackType, attackList, landscapeFileName):
         """
-        Starts the CyberTop policy engine
+        Retrieve the HSPLs that can be used to mitigate an attack.
+        @param identifier: the attack id.
+        @param severity: the attack severity.
+        @param attackType: the attack type.
+        @param attackList: the list to parse.
+        @param landscapeFileName: the name of the landscape file to parse.
+        @return: The HSPL set and MSPL set that can mitigate the attack. It is
+                 None if the attack is not manageable.
+        @raise SyntaxError: When the generated XML is not valid.
+        """
+        
+        attack = self.parser.getAttackFromList(identifier, severity, attackType, attackList)
+        landscape = self.parser.getLandscape(landscapeFileName)
+        recipe = self.recipesReasoner.getRecipe(attack, landscape)
+        hsplSet = self.hsplReasoner.getHSPLs(attack, recipe, landscape)
+        msplSet = self.msplReasoner.getMSPLs(hsplSet, landscape)
+
+        if hsplSet is None or msplSet is None:
+            return None
+        else:
+            return [hsplSet, msplSet]
+
+    def listenFolder(self, foreground=False):
+        """
+        Starts the CyberTop policy engine by listening to a folder.
         @param foreground: A value stating if the daemon must be launched in foreground or background mode.
         """
 
@@ -133,15 +163,67 @@ class CyberTop(pyinotify.ProcessEvent):
             notifier.loop(daemonize=True, pid_file=getPIDFile())
         else:
             notifier.loop(daemonize=False)
+    
+    def send(self, hsplSet, msplSet):
+        """
+        Sends the policies to the dashboard.
+        @param hsplSet: the HSPL set.
+        @param msplSet: the MSPL set.
+        """
 
+        if (self.configParser.has_option("global", "dashboardHost") and
+            self.configParser.has_option("global", "dashboardPort") and
+            self.configParser.has_option("global", "dashboardExchange") and
+            self.configParser.has_option("global", "dashboardTopic") and
+            self.configParser.has_option("global", "dashboardAttempts") and
+                self.configParser.has_option("global", "dashboardRetryDelay")):
+
+            host = self.configParser.get("global", "dashboardHost")
+            port = self.configParser.getint("global", "dashboardPort")
+            connectionAttempts = self.configParser.getint("global",
+                                                          "dashboardAttempts")
+            retryDelay = self.configParser.getint("global",
+                                                  "dashboardRetryDelay")
+            connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host=host,
+                port=port,
+                connection_attempts=connectionAttempts,
+                retry_delay=retryDelay,
+                blocked_connection_timeout=300))
+            self.channel = connection.channel()
+            self.channel.exchange_declare(exchange=self.configParser.
+                                          get("global", "dashboardExchange"),
+                                          exchange_type="topic")
+            LOG.info("Connected to the dashboard at " + host + ":" + str(port))
+            hsplString = etree.tostring(hsplSet).decode()
+            msplString = etree.tostring(msplSet).decode()
+            content = self.configParser.get("global", "dashboardContent")
+            if content == "HSPL":
+                message = hsplString
+            elif content == "MSPL":
+                message = msplString
+            else:
+                message = hsplString + msplString
+
+            LOG.info("Pushing the remediation to the dashboard")
+            exchange = self.configParser.get("global", "dashboardExchange")
+            topic = self.configParser.get("global", "dashboardTopic")
+            self.channel.basic_publish(exchange=exchange,
+                                       routing_key=topic, body=message)
+            LOG.debug("Dashboard RabbitMQ exchange: " + exchange + " topic: " + topic)
+            LOG.info("Remediation forwarded to the dashboard")
+            self.channel.close()
+            LOG.info("Connection with the dashboard closed")
+            
     def process_IN_CLOSE_WRITE(self, event):
         """
         Handles a file creation.
         @param event: The file event.
         """
+        
         try:
             # First, translate the CSV in HSPL, MSPL sets
-            [hsplSet, msplSet] = self.getMSPLs(event.pathname,
+            [hsplSet, msplSet] = self.getMSPLsFromFile(event.pathname,
                                                self.configParser.
                                                get("global",
                                                    "landscapeFile"))
@@ -158,53 +240,173 @@ class CyberTop(pyinotify.ProcessEvent):
                             decode())
 
             # Finally, sends everything to RabbitMQ.
-
-            if (self.configParser.has_option("global", "dashboardHost") and
-                self.configParser.has_option("global", "dashboardPort") and
-                self.configParser.has_option("global", "dashboardExchange") and
-                self.configParser.has_option("global", "dashboardTopic") and
-                self.configParser.has_option("global", "dashboardAttempts") and
-                    self.configParser.has_option("global", "dashboardRetryDelay")):
-
-                host = self.configParser.get("global", "dashboardHost")
-                port = self.configParser.getint("global", "dashboardPort")
-                connectionAttempts = self.configParser.getint("global",
-                                                              "dashboardAttempts")
-                retryDelay = self.configParser.getint("global",
-                                                      "dashboardRetryDelay")
-                connection = pika.BlockingConnection(pika.ConnectionParameters(
-                    host=host,
-                    port=port,
-                    connection_attempts=connectionAttempts,
-                    retry_delay=retryDelay,
-                    blocked_connection_timeout=300))
-                self.channel = connection.channel()
-                self.channel.exchange_declare(exchange=self.configParser.
-                                              get("global", "dashboardExchange"),
-                                              exchange_type='topic')
-                LOG.info("Connected to the dashboard at " + host + ":" + str(port))
-                hsplString = etree.tostring(hsplSet).decode()
-                msplString = etree.tostring(msplSet).decode()
-                content = self.configParser.get("global", "dashboardContent")
-                if content == "HSPL":
-                    message = hsplString
-                elif content == "MSPL":
-                    message = msplString
-                else:
-                    message = hsplString + msplString
-
-                LOG.info("Pushing the remediation to the dashboard")
-                exchange = self.configParser.get("global", "dashboardExchange")
-                topic = self.configParser.get("global", "dashboardTopic")
-                self.channel.basic_publish(exchange=exchange,
-                                           routing_key=topic, body=message)
-                LOG.debug("RabbitMQ exchange: " + exchange + " topic: " +
-                          topic)
-                LOG.info("Remediation forwarded to the dashboard")
-                self.channel.close()
-                LOG.info("Connection with the dashboard closed")
+            self.send(hsplSet, msplSet)
         except BaseException as e:
             LOG.critical(str(e))
             if self.channel is not None:
                 if not self.channel.is_closed:
                     self.channel.close()
+
+    def processMessage(self, channel, method, header, body):
+        """
+        Handles a RabbitMQ message.
+        @param channel: The channel.
+        @param method: The method.
+        @param header: The message header.
+        @param body: The message body.
+        """
+        
+        line = body.decode()
+        dialect = Sniffer().sniff(line)
+        fields = []
+        for i in reader([line], dialect):
+            fields += i
+        
+        LOG.debug("DARE RabbitMQ message: " + line)
+        if len(fields) == 4 and fields[0].isdigit() and match("(very\s+)?(low|high)", fields[1], IGNORECASE) and fields[3] == "start":
+            identifier = int(fields[0])
+            severity = " ".join(fields[1].lower().split())
+            attackType = fields[2]
+            LOG.info("Attack started (id: %d, severity: %s, type: %s)" % (identifier, severity, attackType))
+            
+            key = "%d-%s-%s" % (identifier, severity, attackType)
+            if key in self.attacks:
+                LOG.warning("Duplicate start message")
+            else:
+                self.attacks[key] = AttackInfo(identifier, severity, attackType)
+        elif len(fields) == 4 and fields[0].isdigit() and match("(very\s+)?(low|high)", fields[1], IGNORECASE) and fields[3] == "stop":
+            identifier = int(fields[0])
+            severity = " ".join(fields[1].lower().split())
+            attackType = fields[2]
+            LOG.info("Attack stopped (id: %d, severity: %s, type: %s)" % (identifier, severity, attackType))
+            
+            key = "%d-%s-%s" % (identifier, severity, attackType)
+            if key not in self.attacks:
+                LOG.warning("Stop message without initial start message")
+            else:
+                attackInfo = self.attacks[key]
+                self.attacks.pop(key)
+                identifier = attackInfo.getIdentifier()
+                severity = attackInfo.getSeverity()
+                attackType = attackInfo.getType()
+                events = attackInfo.getEvents()
+                landscapeFileName = self.configParser.get("global", "landscapeFile")
+
+                # First, translate the CSV in HSPL, MSPL sets
+                [hsplSet, msplSet] = self.getMSPLsFromList(identifier, severity, attackType, events, landscapeFileName)
+
+                # Then, if extra logging is activated, print HSPL (and/or MSPL)
+                # to an external file
+                if self.configParser.has_option("global", "hsplsFile"):
+                    with open(self.configParser.get("global", "hsplsFile"), "w") as f:
+                        f.write(etree.tostring(hsplSet, pretty_print=True).
+                                decode())
+                if self.configParser.has_option("global", "msplsFile"):
+                    with open(self.configParser.get("global", "msplsFile"), "w") as f:
+                        f.write(etree.tostring(msplSet, pretty_print=True).
+                                decode())
+
+                # Finally, sends everything to RabbitMQ.
+                self.send(hsplSet, msplSet)
+                
+        elif len(fields) > 4 and fields[0].isdigit() and match("(very\s+)?(low|high)", fields[1], IGNORECASE):
+            identifier = int(fields[0])
+            severity = " ".join(fields[1].lower().split())
+            attackType = fields[2]
+            LOG.debug("Attack event (id: %d, severity: %s, type: %s, body: %s)" % (identifier, severity, attackType, line))
+            
+            key = "%d-%s-%s" % (identifier, severity, attackType)
+            if key not in self.attacks:
+                LOG.warning("Attack event without initial start message")
+            else:
+                self.attacks[key].addEvent("\t".join(fields[3:]))
+        else:
+            LOG.warning("Unknown message format")
+
+        channel.basic_ack(delivery_tag=method.delivery_tag)
+
+    def listenRabbitMQ(self):
+        """
+        Starts the CyberTop policy engine by listening to a RabbitMQ queue.
+        @param foreground: A value stating if the daemon must be launched in foreground or background mode.
+        """
+
+        address = self.configParser.get("global", "serverAddress")
+        port = self.configParser.getint("global", "serverPort")
+        exchange = self.configParser.get("global", "serverExchange")
+        queue = self.configParser.get("global", "serverQueue")
+        topic = self.configParser.get("global", "serverTopic")
+        
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=address, port=port))
+        
+        channel = connection.channel()
+        channel.exchange_declare(exchange=exchange, exchange_type="topic")
+        channel.queue_declare(queue=queue)
+        channel.queue_bind(exchange=exchange, queue=queue, routing_key=topic)
+        channel.basic_consume(self.processMessage, queue=queue)
+        channel.start_consuming()
+
+class AttackInfo:
+    """
+    The attack information class use to perform multi-attack analysis.
+    """
+
+    def __init__(self, identifier, severity, attackType):
+        """
+        Creates the attack info object.
+        @param identifier: the attack id.
+        @param severity: the attack severity.
+        @param attackType: the attack type.
+        """
+        
+        self.__identifier = identifier
+        if severity == "very low":
+            self.__severity = 1
+        elif severity == "low":
+            self.__severity = 2
+        elif severity == "high":
+            self.__severity = 3
+        else:
+            self.__severity = 4
+        self.__attackType = attackType
+        self.__events = []
+    
+    def addEvent(self, event):
+        """
+        Adds an attack event.
+        @param event: the event to add.
+        """
+        
+        self.__events.append(event)
+    
+    def getEvents(self):
+        """
+        Retrieves the attack events.
+        @return: the attack events.
+        """
+        
+        return self.__events
+
+    def getIdentifier(self):
+        """
+        Retrieves the attack identifier.
+        @return: the attack identifier.
+        """
+        
+        return self.__identifier
+
+    def getSeverity(self):
+        """
+        Retrieves the attack severity.
+        @return: the attack severity.
+        """
+        
+        return self.__severity
+
+    def getType(self):
+        """
+        Retrieves the attack type.
+        @return: the attack type.
+        """
+        
+        return self.__attackType

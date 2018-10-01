@@ -41,13 +41,14 @@ class Parser(object):
         self.configParser = configParser
         self.pluginManager = pluginManager
 
-    def getAttack(self, fileName):
+    def getAttackFromFile(self, fileName):
         """
         Creates an attack object by parsing a CSV file.
         @param fileName: the file name of the CSV file to parse.
         @return: the attack object.
         @raise IOError: if the file has an invalid format or if no suitable parser plug-in is available.
         """
+        
         # First: checks if the file is a regular file.
         if not ntpath.isfile(fileName):
             LOG.critical("The file '%s' is not a regular file.", fileName)
@@ -103,7 +104,50 @@ class Parser(object):
                     
         LOG.info("Parsed an attack of type '%s' with severity %d and containing %d events.", attack.type, attack.severity, len(attack.events))
         return attack
-    
+
+    def getAttackFromList(self, identifier, severity, attackType, attackList):
+        """
+        Creates an attack object by parsing a CSV list.
+        @param identifier: the attack id.
+        @param severity: the attack severity.
+        @param attackType: the attack type.
+        @param attackList: the list to parse.
+        @return: the attack object.
+        @raise IOError: if the file has an invalid format or if no suitable parser plug-in is available.
+        """
+        
+        # Finds a suitable parser.
+        plugin = None
+        for i in self.pluginManager.getPluginsOfCategory("Parser"):
+            pluginFileName = i.details.get("Core", "FileName")
+            if re.match(pluginFileName, attackType):
+                plugin = i
+                break
+        if plugin is None:
+            LOG.critical("No suitable attack event parser found.")
+            raise IOError("No suitable attack event parser found")
+
+        # Creates an attack object.
+        attackType = plugin.details.get("Core", "Attack")
+        attack = Attack(severity, attackType, identifier)
+                
+        # Opens the file and read the events.
+        count = 0
+        for line in attackList:
+            count += 1
+            event = plugin.plugin_object.parse(None, count, line)
+            print(">>>>>>", event)
+            if event is not None:
+                attack.events.append(event)
+        
+        # Third: checks if there are some events.
+        if count == 0:
+            LOG.critical("The list is empty")
+            raise IOError("The list is empty")
+                    
+        LOG.info("Parsed an attack of type '%s' with severity %d and containing %d events.", attack.type, attack.severity, len(attack.events))
+        return attack
+
     def getLandscape(self, fileName):
         """
         Creates a landscape map by parsing an XML file.
