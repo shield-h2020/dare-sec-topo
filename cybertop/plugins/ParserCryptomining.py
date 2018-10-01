@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Cryptojacking attack events parser plug-in.
+Cryptomining attack events parser plug-in.
 
 @author: Daniele Canavese
 """
@@ -25,9 +25,9 @@ from cybertop.log import LOG
 from dateutil import parser
 import ipaddress
 
-class ParserCryptojackingS(ParserPlugin):
+class ParserCryptomining(ParserPlugin):
     """
-    Parses a Cryptojacking attack event.
+    Parses a Cryptomining attack event.
     """
     
     def parse(self, fileName, count, line):
