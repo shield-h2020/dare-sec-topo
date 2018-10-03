@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-DoS attack events parser plug-in.
+Cryptomining attack events parser plug-in.
 
 @author: Daniele Canavese
 """
@@ -25,9 +25,9 @@ from cybertop.log import LOG
 from dateutil import parser
 import ipaddress
 
-class ParserDoS(ParserPlugin):
+class ParserCryptomining(ParserPlugin):
     """
-    Parses a DoS attack event.
+    Parses a Cryptomining attack event.
     """
     
     def parse(self, fileName, count, line):
@@ -44,7 +44,7 @@ class ParserDoS(ParserPlugin):
             return None
         
         parts = re.split("\s*,\s*|\s+", line.rstrip())
-                
+        
         if parts == [""]:
             return None
         

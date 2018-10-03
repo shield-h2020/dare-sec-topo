@@ -52,7 +52,7 @@ class BasicTest(unittest.TestCase):
         """
         cyberTop = CyberTop(getTestFilePath("cybertop.cfg"), getTestFilePath("logging.ini"))
     
-        r = cyberTop.getMSPLs(getTestFilePath(attackFile), getTestFilePath(landscapeFile))
+        r = cyberTop.getMSPLsFromFile(getTestFilePath(attackFile), getTestFilePath(landscapeFile))
         self.assertIsNotNone(r)
         [hsplSet, _] = r
         protocols = hsplSet.findall("{%s}hspl/{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace(), getHSPLNamespace()))
@@ -86,7 +86,7 @@ class BasicTest(unittest.TestCase):
         """
         cyberTop = CyberTop(getTestFilePath("cybertop.cfg"), getTestFilePath("logging.ini"))
     
-        r = cyberTop.getMSPLs(getTestFilePath(attackFile), getTestFilePath(landscapeFile))
+        r = cyberTop.getMSPLsFromFile(getTestFilePath(attackFile), getTestFilePath(landscapeFile))
         self.assertIsNotNone(r)
         [hsplSet, _] = r
         objects = hsplSet.findall("{%s}hspl/{%s}object" % (getHSPLNamespace(), getHSPLNamespace()))
@@ -243,6 +243,30 @@ class TestDNSTunneling(BasicTest):
         """
         self._doHSPLTest("High-DNS tunneling-3.csv", "landscape1.xml", ["TCP+UDP"] * 3, ["drop"] * 3, ["0.0.0.0/0:53"] * 3)
         self._doHSPLTest("High-DNS tunneling-3.csv", "landscape2.xml", ["TCP+UDP"] * 3, ["drop"] * 3, ["0.0.0.0/0:53"] * 3)
+
+class TestCryptomining(BasicTest):
+    """
+    Tests the cryptomining attack responses.
+    """
+        
+    def test_lowCryptomining(self):
+        """
+        Tests the cryptomining, low severity.
+        """
+        self._doHSPLTest("Low-Cryptocurrency Mining-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["35.177.197.177:3333", "10.0.2.15:34991"], ["34991", "3333"])
+        self._doHSPLTest("Low-Cryptocurrency Mining-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["35.177.197.177:3333", "10.0.2.15:34991"], ["34991", "3333"])
+
+class TestWorm(BasicTest):
+    """
+    Tests the Worm attack responses.
+    """
+        
+    def test_highWorm(self):
+        """
+        Tests the worm, high severity.
+        """
+        self._doHSPLTest("High-Worm-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["*:*", "*:*"], ["*", "*"])
+        self._doHSPLTest("High-Worm-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["*:*", "*:*"], ["*", "*"])
 
 class TestHSPLMerging(BasicTest):
     """

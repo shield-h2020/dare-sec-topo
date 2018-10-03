@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-DoS attack events parser plug-in.
+Worm attack events parser plug-in.
 
 @author: Daniele Canavese
 """
@@ -25,9 +25,9 @@ from cybertop.log import LOG
 from dateutil import parser
 import ipaddress
 
-class ParserDoS(ParserPlugin):
+class ParserWorm(ParserPlugin):
     """
-    Parses a DoS attack event.
+    Parses a Worm attack event.
     """
     
     def parse(self, fileName, count, line):
