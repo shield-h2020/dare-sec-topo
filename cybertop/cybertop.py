@@ -39,6 +39,7 @@ from csv import Sniffer
 from re import match
 from re import IGNORECASE
 
+
 class CyberTop(pyinotify.ProcessEvent):
     """
     The CyberSecurity Topologies main class.
@@ -100,9 +101,12 @@ class CyberTop(pyinotify.ProcessEvent):
         self.hsplReasoner = HSPLReasoner(self.configParser, self.pluginManager)
         self.msplReasoner = MSPLReasoner(self.configParser, self.pluginManager)
         LOG.info("CyberSecurity Topologies initialized.")
-        
         # Starts with no attack info.
         self.attacks = {}
+        # Connection to the DARE rabbitMQ queue
+        self.r_connection = None
+        self.r_channel = None
+        self.r_closingConnection = False
 
     def getMSPLsFromFile(self, attackFileName, landscapeFileName):
         """
@@ -113,7 +117,6 @@ class CyberTop(pyinotify.ProcessEvent):
                  None if the attack is not manageable.
         @raise SyntaxError: When the generated XML is not valid.
         """
-        
         attack = self.parser.getAttackFromFile(attackFileName)
         landscape = self.parser.getLandscape(landscapeFileName)
         recipe = self.recipesReasoner.getRecipe(attack, landscape)
@@ -125,7 +128,8 @@ class CyberTop(pyinotify.ProcessEvent):
         else:
             return [hsplSet, msplSet]
 
-    def getMSPLsFromList(self, identifier, severity, attackType, attackList, landscapeFileName):
+    def getMSPLsFromList(self, identifier, severity, attackType, attackList,
+                         landscapeFileName):
         """
         Retrieve the HSPLs that can be used to mitigate an attack.
         @param identifier: the attack id.
@@ -137,8 +141,9 @@ class CyberTop(pyinotify.ProcessEvent):
                  None if the attack is not manageable.
         @raise SyntaxError: When the generated XML is not valid.
         """
-        
-        attack = self.parser.getAttackFromList(identifier, severity, attackType, attackList)
+
+        attack = self.parser.getAttackFromList(identifier, severity, attackType,
+                                               attackList)
         landscape = self.parser.getLandscape(landscapeFileName)
         recipe = self.recipesReasoner.getRecipe(attack, landscape)
         hsplSet = self.hsplReasoner.getHSPLs(attack, recipe, landscape)
@@ -152,7 +157,8 @@ class CyberTop(pyinotify.ProcessEvent):
     def listenFolder(self, foreground=False):
         """
         Starts the CyberTop policy engine by listening to a folder.
-        @param foreground: A value stating if the daemon must be launched in foreground or background mode.
+        @param foreground: A value stating if the daemon must be launched in
+        foreground or background mode.
         """
 
         wm = pyinotify.WatchManager()
@@ -163,7 +169,7 @@ class CyberTop(pyinotify.ProcessEvent):
             notifier.loop(daemonize=True, pid_file=getPIDFile())
         else:
             notifier.loop(daemonize=False)
-    
+
     def send(self, hsplSet, msplSet):
         """
         Sends the policies to the dashboard.
@@ -214,13 +220,13 @@ class CyberTop(pyinotify.ProcessEvent):
             LOG.info("Remediation forwarded to the dashboard")
             self.channel.close()
             LOG.info("Connection with the dashboard closed")
-            
+
     def process_IN_CLOSE_WRITE(self, event):
         """
         Handles a file creation.
         @param event: The file event.
         """
-        
+
         try:
             # First, translate the CSV in HSPL, MSPL sets
             [hsplSet, msplSet] = self.getMSPLsFromFile(event.pathname,
@@ -255,20 +261,20 @@ class CyberTop(pyinotify.ProcessEvent):
         @param header: The message header.
         @param body: The message body.
         """
-        
+
         line = body.decode()
         dialect = Sniffer().sniff(line)
         fields = []
         for i in reader([line], dialect):
             fields += i
-        
+
         LOG.debug("DARE RabbitMQ message: " + line)
         if len(fields) == 4 and fields[0].isdigit() and match("(very\s+)?(low|high)", fields[1], IGNORECASE) and fields[3] == "start":
             identifier = int(fields[0])
             severity = " ".join(fields[1].lower().split())
             attackType = fields[2]
             LOG.info("Attack started (id: %d, severity: %s, type: %s)" % (identifier, severity, attackType))
-            
+
             key = "%d-%s-%s" % (identifier, severity, attackType)
             if key in self.attacks:
                 LOG.warning("Duplicate start message")
@@ -279,7 +285,7 @@ class CyberTop(pyinotify.ProcessEvent):
             severity = " ".join(fields[1].lower().split())
             attackType = fields[2]
             LOG.info("Attack stopped (id: %d, severity: %s, type: %s)" % (identifier, severity, attackType))
-            
+
             key = "%d-%s-%s" % (identifier, severity, attackType)
             if key not in self.attacks:
                 LOG.warning("Stop message without initial start message")
@@ -308,13 +314,13 @@ class CyberTop(pyinotify.ProcessEvent):
 
                 # Finally, sends everything to RabbitMQ.
                 self.send(hsplSet, msplSet)
-                
+
         elif len(fields) > 4 and fields[0].isdigit() and match("(very\s+)?(low|high)", fields[1], IGNORECASE):
             identifier = int(fields[0])
             severity = " ".join(fields[1].lower().split())
             attackType = fields[2]
             LOG.debug("Attack event (id: %d, severity: %s, type: %s, body: %s)" % (identifier, severity, attackType, line))
-            
+
             key = "%d-%s-%s" % (identifier, severity, attackType)
             if key not in self.attacks:
                 LOG.warning("Attack event without initial start message")
@@ -330,21 +336,84 @@ class CyberTop(pyinotify.ProcessEvent):
         Starts the CyberTop policy engine by listening to a RabbitMQ queue.
         @param foreground: A value stating if the daemon must be launched in foreground or background mode.
         """
+        self.r_connection = self.connect()
+        self.r_connection.ioloop.start()
 
+    def stopListenRabbitMQ(self):
+        self.r_closingConnection = True
+        self.r_connection.ioloop.stop()
+        self.r_connection.close()
+
+    def on_connection_open(self, new_connection):
+        LOG.debug('Opened connection')
+        self.r_connection.add_on_close_callback(self.on_connection_closed)
+        self.open_channel()
+
+    def on_connection_closed(self, connection, reply_code, reply_text):
+        LOG.debug("Detected a closed connection...reconnect in some time")
+        self.r_channel = None
+        if not self.r_closingConnection:
+            self.r_connection.add_timeout(5, self.reconnect)
+        else:
+            self.r_connection.ioloop.stop()
+
+    def on_connection_error(self, connection, error):
+        LOG.debug("Connection error: " + str(error))
+        time.sleep(5)
+        self.reconnect()
+
+    def reconnect(self):
+        self.r_connection.ioloop.stop()
+        LOG.debug("Reconnecting now")
+        if not self.r_closingConnection:
+            self.r_connection = self.connect()
+            self.r_connection.ioloop.start()
+
+    def open_channel(self):
+        LOG.debug("Opening channel")
+        self.r_connection.channel(on_open_callback=self.on_channel_open)
+
+    def on_channel_open(self, channel):
+        LOG.debug("Channel open, declaring exchange")
+        exchange = self.configParser.get("global", "serverExchange")
+
+        self.r_channel = channel
+        self.r_channel.exchange_declare(self.on_exchange_declareok,
+                                        exchange, "topic")
+
+    def on_exchange_declareok(self, unused_frame):
+        LOG.debug("Exchange declare is ok, declaring queue")
+        queue = self.configParser.get("global", "serverQueue")
+        self.r_channel.queue_declare(self.on_queue_declareok, queue, durable=True)
+
+    def on_queue_declareok(self, frame):
+        LOG.debug("Queue declare is ok, binding queue")
+        queue = self.configParser.get("global", "serverQueue")
+        exchange = self.configParser.get("global", "serverExchange")
+        topic = self.configParser.get("global", "serverTopic")
+
+        self.r_channel.queue_bind(self.on_bindok, queue, exchange, topic)
+
+    def on_bindok(self, frame):
+        LOG.debug("Binding queue is ok, start consuming")
+        queue = self.configParser.get("global", "serverQueue")
+        self.r_channel.add_on_cancel_callback(self.on_consumer_cancelled)
+        self.r_channel.basic_consume(self.processMessage, queue=queue)
+
+    def on_consumer_cancelled(self, frame):
+        LOG.debug("Consumer cancelled")
+        if self.r_channel:
+            self.r_channel.close()
+
+    def connect(self):
+        LOG.debug("RabbitMQ connect invoked")
         address = self.configParser.get("global", "serverAddress")
         port = self.configParser.getint("global", "serverPort")
-        exchange = self.configParser.get("global", "serverExchange")
-        queue = self.configParser.get("global", "serverQueue")
-        topic = self.configParser.get("global", "serverTopic")
-        
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=address, port=port))
-        
-        channel = connection.channel()
-        channel.exchange_declare(exchange=exchange, exchange_type="topic")
-        channel.queue_declare(queue=queue)
-        channel.queue_bind(exchange=exchange, queue=queue, routing_key=topic)
-        channel.basic_consume(self.processMessage, queue=queue)
-        channel.start_consuming()
+        return pika.SelectConnection(
+            pika.ConnectionParameters(host=address, port=port),
+            self.on_connection_open, self.on_connection_error,
+            stop_ioloop_on_close=False)
+
 
 class AttackInfo:
     """
@@ -358,7 +427,7 @@ class AttackInfo:
         @param severity: the attack severity.
         @param attackType: the attack type.
         """
-        
+
         self.__identifier = identifier
         if severity == "very low":
             self.__severity = 1
@@ -370,21 +439,21 @@ class AttackInfo:
             self.__severity = 4
         self.__attackType = attackType
         self.__events = []
-    
+
     def addEvent(self, event):
         """
         Adds an attack event.
         @param event: the event to add.
         """
-        
+
         self.__events.append(event)
-    
+
     def getEvents(self):
         """
         Retrieves the attack events.
         @return: the attack events.
         """
-        
+
         return self.__events
 
     def getIdentifier(self):
@@ -392,7 +461,7 @@ class AttackInfo:
         Retrieves the attack identifier.
         @return: the attack identifier.
         """
-        
+
         return self.__identifier
 
     def getSeverity(self):
@@ -400,7 +469,7 @@ class AttackInfo:
         Retrieves the attack severity.
         @return: the attack severity.
         """
-        
+
         return self.__severity
 
     def getType(self):
@@ -408,5 +477,5 @@ class AttackInfo:
         Retrieves the attack type.
         @return: the attack type.
         """
-        
+
         return self.__attackType
