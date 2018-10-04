@@ -17,6 +17,7 @@ The CyberSecurity Topologies related stuff.
 @author: Daniele Canavese
 """
 
+import threading
 import pyinotify
 from configparser import ConfigParser
 from yapsy.PluginManager import PluginManager
@@ -115,10 +116,21 @@ class CyberTop(pyinotify.ProcessEvent):
             self.listenRabbitMQ()
         elif input == "csv":
             self.listenFolder()
+        elif input == "all":
+            self.spawnThreads()
         else:
             LOG.error("Unknown input method chosen (queue, csv allowed)")
             return
         LOG.info("Cybertop started")
+
+    def spawnThreads(self):
+        t_rabbit = threading.Thread(target=self.listenRabbitMQ)
+        t_csv = threading.Thread(target=self.listenFolder)
+        t_rabbit.start()
+        t_csv.start()
+
+        t_rabbit.join()
+        t_csv.join()
 
     def getMSPLsFromFile(self, attackFileName, landscapeFileName):
         """
