@@ -100,13 +100,25 @@ class CyberTop(pyinotify.ProcessEvent):
                                                self.pluginManager)
         self.hsplReasoner = HSPLReasoner(self.configParser, self.pluginManager)
         self.msplReasoner = MSPLReasoner(self.configParser, self.pluginManager)
-        LOG.info("CyberSecurity Topologies initialized.")
         # Starts with no attack info.
         self.attacks = {}
         # Connection to the DARE rabbitMQ queue
         self.r_connection = None
         self.r_channel = None
         self.r_closingConnection = False
+        LOG.info("CyberSecurity Topologies initialized.")
+
+    def start(self):
+        input = self.configParser.get("global", "inputMethod")
+        LOG.info("Input method: " + input)
+        if input == "queue":
+            self.listenRabbitMQ()
+        elif input == "csv":
+            self.listenFolder()
+        else:
+            LOG.error("Unknown input method chosen (queue, csv allowed)")
+            return
+        LOG.info("Cybertop started")
 
     def getMSPLsFromFile(self, attackFileName, landscapeFileName):
         """
@@ -154,21 +166,17 @@ class CyberTop(pyinotify.ProcessEvent):
         else:
             return [hsplSet, msplSet]
 
-    def listenFolder(self, foreground=False):
+    def listenFolder(self):
         """
         Starts the CyberTop policy engine by listening to a folder.
-        @param foreground: A value stating if the daemon must be launched in
-        foreground or background mode.
         """
-
+        LOG.debug("Request for directory listening")
+        directory = self.configParser.get("global", "watchedDirectory")
+        LOG.debug("Starting directory listener: " + directory)
         wm = pyinotify.WatchManager()
         notifier = pyinotify.Notifier(wm, self)
-        wm.add_watch(self.configParser.get("global", "watchedDirectory"),
-                     pyinotify.IN_CLOSE_WRITE, rec=True, auto_add=True)
-        if(not foreground):
-            notifier.loop(daemonize=True, pid_file=getPIDFile())
-        else:
-            notifier.loop(daemonize=False)
+        wm.add_watch(directory, pyinotify.IN_CLOSE_WRITE, rec=True, auto_add=True)
+        notifier.loop(daemonize=False)
 
     def send(self, hsplSet, msplSet):
         """
@@ -226,7 +234,7 @@ class CyberTop(pyinotify.ProcessEvent):
         Handles a file creation.
         @param event: The file event.
         """
-
+        LOG.debug("Callback from event in directory")
         try:
             # First, translate the CSV in HSPL, MSPL sets
             [hsplSet, msplSet] = self.getMSPLsFromFile(event.pathname,
@@ -261,7 +269,7 @@ class CyberTop(pyinotify.ProcessEvent):
         @param header: The message header.
         @param body: The message body.
         """
-
+        LOG.debug("Callback from event in RabbitMQ")
         line = body.decode()
         dialect = Sniffer().sniff(line)
         fields = []
@@ -327,7 +335,7 @@ class CyberTop(pyinotify.ProcessEvent):
             else:
                 self.attacks[key].addEvent("\t".join(fields[3:]))
         else:
-            LOG.warning("Unknown message format")
+            LOG.warning("Unknown message format: " + line)
 
         channel.basic_ack(delivery_tag=method.delivery_tag)
 
