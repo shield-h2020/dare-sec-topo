@@ -9,86 +9,14 @@ This project includes a Python module, named `cybertop`, and a sample applicatio
 ```
 .
 ├── cybertop
-│   ├── attacks.py
-│   ├── cybertop.py
-│   ├── hspl.py
-│   ├── __init__.py
-│   ├── log.py
-│   ├── mspl.py
-│   ├── parsing.py
-│   ├── plugins
-│   │   ├── ActionDrop.py
-│   │   ├── ActionDrop.yapsy-plugin
-│   │   ├── ActionLimit.py
-│   │   ├── ActionLimit.yapsy-plugin
-│   │   ├── FilterInputBytes.py
-│   │   ├── FilterInputBytes.yapsy-plugin
-│   │   ├── FilterInputPackets.py
-│   │   ├── FilterInputPackets.yapsy-plugin
-│   │   ├── FilterQueryDigits.py
-│   │   ├── FilterQueryDigits.yapsy-plugin
-│   │   ├── FilterQueryLength.py
-│   │   ├── FilterQueryLength.yapsy-plugin
-│   │   ├── ParserDNSTunneling.py
-│   │   ├── ParserDNSTunneling.yapsy-plugin
-│   │   ├── ParserDoS.py
-│   │   └── ParserDoS.yapsy-plugin
-│   ├── plugins.py
-│   ├── recipes
-│   │   ├── DNS tunneling.xml
-│   │   ├── DoS, high.xml
-│   │   └── DoS, low.xml
-│   ├── recipes.py
-│   ├── util.py
-│   └── xsd
-│       ├── hspl.xsd
-│       ├── landscape.xsd
-│       ├── mspl.xsd
-│       └── recipe.xsd
 ├── daemon
-│   ├── cybertop_systemd_install.sh
-│   ├── daemon.py
-│   └── systemd
-│       ├── cybertop
-│       └── cybertop.service
+├── docs
 ├── LICENSE
-├── Makefile
+├── makefile
 ├── MANIFEST.in
 ├── README.md
 ├── setup.py
 └── tests
-    ├── __init__.py
-    ├── cybertop.cfg
-    ├── High-DNS tunneling-1.csv
-    ├── High-DoS-1.csv
-    ├── High-DoS-2.csv
-    ├── High-DoS-3.csv
-    ├── landscape1.xml
-    ├── landscape2.xml
-    ├── logging.ini
-    ├── Low-DNS tunneling-1.csv
-    ├── Low-DoS-1.csv
-    ├── Low-DoS-2.csv
-    ├── Low-DoS-3.csv
-    ├── test_cybertop.py
-    ├── Very high-DNS tunneling-1.csv
-    ├── Very high-DoS-1.csv
-    ├── Very high-DoS-2.csv
-    ├── Very high-DoS-3.csv
-    ├── Very low-DNS tunneling-1.csv
-    ├── Very low-DoS-1.csv
-    ├── Very low-DoS-2.csv
-    ├── Very low-DoS-3.csv
-    ├── Very low-DoS-4.csv
-    ├── Very low-DoS-5.csv
-    ├── Very low-DoS-6.csv
-    ├── Very low-DoS-7.csv
-    ├── Very low-DoS-8.csv
-    ├── Very low-DoS-9.csv
-    ├── Very low-DoS-10.csv
-    ├── Very low-DoS-11.csv
-    ├── Very low-DoS-12.csv
-    └── Very low-DoS-13.csv
 ```
 
 In particular:
@@ -107,9 +35,19 @@ In particular:
 
 ## Requirements
 
-A Python 3 environment is required to run the project. Software dependencies can be installed by running the `setuptools` script.
+A Python 3 environment is required to run the project. To create it, just run:
 
-Dependencies are also listed here for simplicity:
+```
+$ virtualenv -p python3 /path/to/venv
+```
+
+To activate it, just run:
+
+```
+$ source /path/to/venv/bin/activate
+```
+
+Dependencies are listed here for simplicity:
 
 - `setuptools`;
 - `pyinotify`;
@@ -118,15 +56,23 @@ Dependencies are also listed here for simplicity:
 - `python-dateutil`;
 - `pika`.
 
+You can install them by issuing the following command:
+
+```
+$ pip install -r requirements.txt
+```
+
 ## Installation
 
-You can install the `cybertop` module by issuing the following command:
+You can install the `cybertop` module by issuing the following command (in the
+virtualenv):
 
 ```
 $ python setup.py install
 ```
 
-The built-in test suite can be run by issuing the following command:
+The built-in test suite can be run by issuing the following command (in the
+virtualenv):
 
 ```
 $ python setup.py test
@@ -138,22 +84,53 @@ The main class that you should use is `cybertop.CyberTop`.
 It will read the configuration from a file named `cybertop.cfg` (you can look at an example in the `tests` directory).
 It has a method called `getMSPLs()` that receives in input the path of a DARE CSV attack file and will return the XMLs of the HSPLs and MSPLS.
 
-The module configuration resides in the `cybertop.cfg` file.
+## Configuration
 
-## Logging
+### Logging
 Each operation is logged into a file named `cybertop.log`. You can configure the logging by specifying a `logging.ini` file with proper handlers (an example file is in the `tests` directory).
 
-## Daemon app
+### App Configuration
 
-You can also use the tool as a daemon using the `daemon/daemon.py` script. It will listen when a file is created into a directory and react accordingly, sending the results to the dashboard. 
+Application config is under `cybertop.cfg` file. Find a reference example of the
+file in the `tests` directory. This file includes entries to configure the
+following elements:
+
+* Directory for local CSV read (which can be disabled)
+* Parameters for the DARE queue, which is read by our module
+* Parameters for the Dashboard queue, which is written by our module
+* Output files to pretty-print HSPLs and MSPLs (for testing)
+* HSPL optimisation parameters (merging options)
+* Rate limiting specific directives (which are systemwide used
+  by the engine)
+
+
+## (Preferred) Systemd service
+
+The preferred way of using the component is to install it as `systemd` service by running the `daemon/cybertop_systemd_install.sh` script. **N.B:** the Python interpreter accessed by the root user must have the `cybertop` package installed. You **MUST** explicitely configure the Python shebang in `cybertop_systemd_install.sh` to match the path of your Virtualenv.
+
+When you install cybertop as systemd service, it will perform the following
+operations:
+
+1. Create a binary named `/usr/local/bin/cybertop-daemon`
+2. Create a default systemd configuration file in `/etc/default/cybertop`, that
+you **MUST** edit with the following data:
+
+```
+CYBERTOP_CONF="/path/to/cybertop.cfg"
+CYBERTOP_LOG_CONF="/path/to/logging.ini"
+```
+
+3. Copy the systemd service entry in the proper directroy and enable the service
+
+Before running it, you should ensure that `cybertop.cfg` and `logging.ini` are
+properly configured (refer to the previous section for details).
+
+## Standalone daemon
+
+You can also use the tool as a daemon using the `daemon/daemon.py` script. It will listen when a file is created into a directory and react accordingly, sending the results to the dashboard.
 
 The daemon app can be run in standalone mode as follows:
 
 ```
 python daemon.py -c /path/to/cybertop.cfg -l /path/to/logging.ini
 ```
-
-It can also be installed as `systemd` service by running the `daemon/cybertop_systemd_install.sh` script.
-
-**N.B:** the Python interpreter accessed by the root user must have the `cybertop` package installed. You can explicitely configure the Python shebang in `cybertop_systemd_install.sh` to match the path of your Virtualenv.
-The `cybertop.service` must be configured via the `/etc/default/cybertop` file, in which the paths for the `cybertop.cfg` and `logging.ini` file are defined.
