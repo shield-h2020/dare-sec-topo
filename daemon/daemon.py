@@ -29,7 +29,7 @@ def start(args):
     """Start action of the daemon
     """
     cybertop = CyberTop(args.conf, args.log_conf)
-    cybertop.listenRabbitMQ()
+    cybertop.start()
 
 
 class CyberTopDaemon(object):
