@@ -1,7 +1,7 @@
 # Options to pass to cybertop-daemon
 
 # Path to cybertop application configuration file
-CYBERTOP_CONF="/path/to/cybertop.cfg"
+CYBERTOP_CONF="/etc/cybertop/cybertop.cfg"
 
 # Path to cybertop logging configuration file
-CYBERTOP_LOG_CONF="/path/to/logging.ini"
+CYBERTOP_LOG_CONF="/etc/cybertop/logging.ini"
