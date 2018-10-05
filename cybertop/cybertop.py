@@ -349,7 +349,7 @@ class CyberTop(pyinotify.ProcessEvent):
         else:
             LOG.warning("Unknown message format: " + line)
 
-        channel.basic_ack(delivery_tag=method.delivery_tag)
+        #channel.basic_ack(delivery_tag=method.delivery_tag)
 
     def listenRabbitMQ(self):
         """
