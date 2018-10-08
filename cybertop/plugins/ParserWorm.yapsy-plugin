@@ -2,7 +2,7 @@
 Name = Worm attack event parser
 Module = ParserWorm
 Attack = Worm
-FileName = Worm
+FileName = Worm|Wannacry|wannacry
 
 [Documentation]
 Description = The Worm attack event parser plug-in.

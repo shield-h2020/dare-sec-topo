@@ -6,8 +6,8 @@
 	<recipe>
 		<name>drop packets</name>
 		<action>drop</action>
-		<subject-constraints>
-			<any-address>true</any-address>
+ 		<subject-constraints>
+ 			<any-address>true</any-address>
 			<any-port>true</any-port>
 		</subject-constraints>
 		<object-constraints>

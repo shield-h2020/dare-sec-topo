@@ -50,10 +50,10 @@ class ParserWorm(ParserPlugin):
         
         try:
             timestamp = parser.parse("%s %s" % (parts[0], parts[1]))
-            sourceAddress = ipaddress.ip_address(parts[9])
-            destinationAddress = ipaddress.ip_address(parts[10])
-            sourcePort = int(parts[11])
-            destinationPort = int(parts[12])
+            destinationAddress = ipaddress.ip_address(parts[9])
+            sourceAddress = ipaddress.ip_address(parts[10])
+            destinationPort = int(parts[11])
+            sourcePort = int(parts[12])
             protocol = parts[13]
             inputPackets = int(parts[14])
             inputBytes = int(parts[15])
