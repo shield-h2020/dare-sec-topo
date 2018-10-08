@@ -57,8 +57,13 @@ class BasicTest(unittest.TestCase):
         [hsplSet, _] = r
         protocols = hsplSet.findall("{%s}hspl/{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace(), getHSPLNamespace()))
         self.assertEqual(len(protocols), len(expectedProtocols))
+        p1 = []
+        for i in protocols:
+            p1.append(i.text)
+        p1 = sorted(p1)
+        p2 = sorted(expectedProtocols)
         for i in range(len(protocols)):
-            self.assertEqual(protocols[i].text, expectedProtocols[i])
+            self.assertEqual(p1[i], p2[i])
         actions = hsplSet.findall("{%s}hspl/{%s}action" % (getHSPLNamespace(), getHSPLNamespace()))
         objects = hsplSet.findall("{%s}hspl/{%s}object" % (getHSPLNamespace(), getHSPLNamespace()))
         subjects = hsplSet.findall("{%s}hspl/{%s}subject" % (getHSPLNamespace(), getHSPLNamespace()))
@@ -261,12 +266,19 @@ class TestWorm(BasicTest):
     Tests the Worm attack responses.
     """
         
+    def test_veryHighWorm(self):
+        """
+        Tests the worm, very high severity.
+        """
+        self._doHSPLTest("Very High-wannacry-1.csv", "landscape1.xml", ["TCP", "UDP"], ["drop"] * 2, ["*:*"] * 2, ["*"] * 2)
+        self._doHSPLTest("Very High-wannacry-1.csv", "landscape2.xml", ["TCP", "UDP"], ["drop"] * 2, ["*:*"] * 2, ["*"] * 2)
+        
     def test_highWorm(self):
         """
         Tests the worm, high severity.
         """
-        self._doHSPLTest("High-Worm-1.csv", "landscape1.xml", ["TCP"] * 2, ["drop"] * 2, ["*:*", "*:*"], ["*", "*"])
-        self._doHSPLTest("High-Worm-1.csv", "landscape2.xml", ["TCP"] * 2, ["drop"] * 2, ["*:*", "*:*"], ["*", "*"])
+        self._doHSPLTest("High-Worm-1.csv", "landscape1.xml", ["TCP"], ["drop"], ["*:*"], ["*"])
+        self._doHSPLTest("High-Worm-1.csv", "landscape2.xml", ["TCP"], ["drop"], ["*:*"], ["*"])
 
 class TestHSPLMerging(BasicTest):
     """
