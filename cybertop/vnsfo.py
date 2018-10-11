@@ -30,7 +30,7 @@ def retrieve_vnsfr_id(vnsfo_base_url, vnfd_id, attack_name, timeout):
         for vnsf in vnsfs:
             if vnsf['vnfd_id'] == vnfd_id:
                 LOG.info("Found running vNSF with matching vnfd_id")
-                if attack_name in vnsf['ns_name']:
+                if attack_name.lower() in vnsf['ns_name'].lower():
                     LOG.info("Found instance=" + vnsf['vnfr_id'] +
                              " for attack=" + attack_name)
                     return vnsf['vnfr_id']
