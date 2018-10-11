@@ -15,14 +15,14 @@ import requests
 from cybertop.log import LOG
 
 
-def retrieve_vnsfr_id(vnsfo_base_url, vnfd_id, attack_name):
+def retrieve_vnsfr_id(vnsfo_base_url, vnfd_id, attack_name, timeout):
     LOG.info("Request vNSFO API call for vnsfd_id=" + vnfd_id +
              " and attack type=" + attack_name)
     url = vnsfo_base_url + "/vnsf/running"
     LOG.info("VNSFO API call: " + url)
 
     try:
-        response = requests.get(url, verify=False)
+        response = requests.get(url, verify=False, timeout=timeout)
         LOG.info("VNSFO API response: " + response.text)
         vnsfs = response.json()["vnsf"]
 

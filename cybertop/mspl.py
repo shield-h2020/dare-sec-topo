@@ -26,6 +26,7 @@ from cybertop.util import getHSPLNamespace
 from cybertop.util import getMSPLNamespace
 from cybertop.util import getXSINamespace
 from cybertop.log import LOG
+from cybertop.vnsfo import retrieve_vnsfr_id
 
 class MSPLReasoner(object):
     """
@@ -71,6 +72,8 @@ class MSPLReasoner(object):
         [plugin, identifier] = self.__findLocation(hsplSet, landscape)
         plugin.plugin_object.setup(self.configParser)
 
+        LOG.info("Check if VNSFO API call (experimental) is enabled")
+
         # Check if VNSFO is integrated to Recommendation engine
         vnsfo_integration = self.configParser.getboolean("vnsfo",
                                                          "enable_vnsfo_api_call")
@@ -78,15 +81,20 @@ class MSPLReasoner(object):
             # Creates the IT resource.
             LOG.info("Experimental: contact vNSFO API")
             vnsfo_base_url = self.configParser.get("vnsfo", "vnsfo_base_url")
+            vnsfo_timeout = int(self.configParser.get("vnsfo", "vnsfo_timeout"))
             if not vnsfo_base_url:
                 LOG.info("VNSFO base URL empty. Fallback to stable.")
             else:
                 LOG.info("Retrieving VNSF running ID for: " + identifier)
-                vnsfr_id = vnsfo.retrieve_vnsfr_id(vnsfo_base_url,
-                                                     identifier,
-                                                     msplType)
-                LOG.info("VNSF running ID is: " + vnsfr_id)
-                identifier = runtime_id
+                vnfr_id = retrieve_vnsfr_id(vnsfo_base_url,
+                                            identifier,
+                                            msplType,
+                                            vnsfo_timeout)
+                if vnfr_id:
+                    LOG.info("VNSF running ID is: " + vnfr_id)
+                    identifier = vnfr_id
+        else:
+            LOG.info("Stable solution selected.")
         itResource = etree.SubElement(msplSet, "{%s}it-resource" % getMSPLNamespace(), {"id" : identifier})
         # Calls the plug-in to configure the IT resource.
         plugin.plugin_object.configureITResource(itResource, hsplSet)
