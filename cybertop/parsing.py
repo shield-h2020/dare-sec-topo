@@ -1,11 +1,11 @@
 # Copyright 2017 Politecnico di Torino
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -48,12 +48,12 @@ class Parser(object):
         @return: the attack object.
         @raise IOError: if the file has an invalid format or if no suitable parser plug-in is available.
         """
-        
+
         # First: checks if the file is a regular file.
         if not ntpath.isfile(fileName):
             LOG.critical("The file '%s' is not a regular file.", fileName)
             raise IOError("The file '%s' is not a regular file." % fileName)
-        
+
         # Second: checks the file name format.
         match = re.match("^(Very Low|Very low|very low|Low|low|High|high|Very High|Very high|high)-(.+)?-(\d+)\.csv$", os.path.basename(fileName))
         if match:
@@ -73,6 +73,8 @@ class Parser(object):
             attackType = os.path.splitext(ntpath.basename(fileName))[0]
             identifier = None
 
+        anomaly_name = attackType
+
         # Finds a suitable parser.
         plugin = None
         for i in self.pluginManager.getPluginsOfCategory("Parser"):
@@ -86,8 +88,8 @@ class Parser(object):
 
         # Creates an attack object.
         attackType = plugin.details.get("Core", "Attack")
-        attack = Attack(severity, attackType, identifier)
-                
+        attack = Attack(severity, attackType, identifier, anomaly_name)
+
         # Opens the file and read the events.
         count = 0
         with open(fileName, "rt") as csv:
@@ -96,16 +98,16 @@ class Parser(object):
                 event = plugin.plugin_object.parse(fileName, count, line)
                 if event is not None:
                     attack.events.append(event)
-        
+
         # Third: checks if there are some events.
         if count <= 1:
             LOG.critical("The file '%s' is empty.", fileName)
             raise IOError("The file '%s' is empty." % fileName)
-                    
+
         LOG.info("Parsed an attack of type '%s' with severity %d and containing %d events.", attack.type, attack.severity, len(attack.events))
         return attack
 
-    def getAttackFromList(self, identifier, severity, attackType, attackList):
+    def getAttackFromList(self, identifier, severity, attackType, attackList, anomaly_name):
         """
         Creates an attack object by parsing a CSV list.
         @param identifier: the attack id.
@@ -115,7 +117,7 @@ class Parser(object):
         @return: the attack object.
         @raise IOError: if the file has an invalid format or if no suitable parser plug-in is available.
         """
-        
+
         # Finds a suitable parser.
         plugin = None
         for i in self.pluginManager.getPluginsOfCategory("Parser"):
@@ -129,8 +131,8 @@ class Parser(object):
 
         # Creates an attack object.
         attackType = plugin.details.get("Core", "Attack")
-        attack = Attack(severity, attackType, identifier)
-                
+        attack = Attack(severity, attackType, identifier, anomaly_name)
+
         # Opens the file and read the events.
         count = 0
         for line in attackList:
@@ -139,12 +141,12 @@ class Parser(object):
             print(">>>>>>", event)
             if event is not None:
                 attack.events.append(event)
-        
+
         # Third: checks if there are some events.
         if count == 0:
             LOG.critical("The list is empty")
             raise IOError("The list is empty")
-                    
+
         LOG.info("Parsed an attack of type '%s' with severity %d and containing %d events.", attack.type, attack.severity, len(attack.events))
         return attack
 
@@ -157,11 +159,11 @@ class Parser(object):
         """
         schema = etree.XMLSchema(etree.parse(getLandscapeXSDFile()))
         parser = etree.XMLParser(schema = schema)
-        
+
         if not os.path.exists(fileName):
             LOG.critical("The file '%s' does not exist", fileName)
             raise IOError("The file '%s' does not exist", fileName)
-            
+
         root = etree.parse(fileName, parser).getroot()
         landscape = {}
         for i in root:
@@ -170,6 +172,6 @@ class Parser(object):
             for j in i.findall("{%s}capability" % getLandscapeNamespace()):
                 capabilities.add(j.text)
             landscape[identifier] = capabilities
-        
+
         LOG.info("Landscape with %d IT resources read.", len(landscape))
         return landscape

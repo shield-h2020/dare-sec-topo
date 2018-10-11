@@ -1,11 +1,11 @@
 # Copyright 2017 Politecnico di Torino
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,8 @@ class Attack(object):
     """
     An attack.
     """
-    
-    def __init__(self, severity, attackType, identifier):
+
+    def __init__(self, severity, attackType, identifier, anomaly_name):
         """
         Constructor. It creates an attack without events.
         @param severity: The attack severity. An integer between 1 and 4.
@@ -33,28 +33,29 @@ class Attack(object):
         self.severity = severity
         self.type = attackType
         self.identifier = identifier
+        self.anomaly_name = anomaly_name
         self.events = []
-    
+
     def getTimestamp(self):
         """
         Retrieves the attack timestamp.
         @return: The attack timestamp or None if no timestamp is available.
         """
         timestamp = None
-        
+
         for i in self.events:
             if timestamp is None:
                 timestamp = i.timestamp
             else:
                 timestamp = min(timestamp, i.timestamp)
-        
+
         return timestamp
 
 class AttackEvent(object):
     """
     An attack event.
     """
-    
+
     def __init__(self, timestamp, attacker, target):
         """
         Constructor.

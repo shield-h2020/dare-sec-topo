@@ -145,7 +145,8 @@ class CyberTop(pyinotify.ProcessEvent):
         landscape = self.parser.getLandscape(landscapeFileName)
         recipe = self.recipesReasoner.getRecipe(attack, landscape)
         hsplSet = self.hsplReasoner.getHSPLs(attack, recipe, landscape)
-        msplSet = self.msplReasoner.getMSPLs(hsplSet, landscape)
+        msplSet = self.msplReasoner.getMSPLs(hsplSet, landscape,
+                                             attack.anomaly_name)
 
         if hsplSet is None or msplSet is None:
             return None
@@ -153,7 +154,7 @@ class CyberTop(pyinotify.ProcessEvent):
             return [hsplSet, msplSet]
 
     def getMSPLsFromList(self, identifier, severity, attackType, attackList,
-                         landscapeFileName):
+                         landscapeFileName, anomaly_name):
         """
         Retrieve the HSPLs that can be used to mitigate an attack.
         @param identifier: the attack id.
@@ -167,12 +168,16 @@ class CyberTop(pyinotify.ProcessEvent):
         """
 
         attack = self.parser.getAttackFromList(identifier, severity, attackType,
-                                               attackList)
+                                               attackList, anomaly_name)
+        LOG.debug("Got attack from list")
         landscape = self.parser.getLandscape(landscapeFileName)
+        LOG.debug("Got landscape")
         recipe = self.recipesReasoner.getRecipe(attack, landscape)
+        LOG.debug("Got recipe")
         hsplSet = self.hsplReasoner.getHSPLs(attack, recipe, landscape)
-        msplSet = self.msplReasoner.getMSPLs(hsplSet, landscape)
-
+        LOG.debug("Got hsplset")
+        msplSet = self.msplReasoner.getMSPLs(hsplSet, landscape, anomaly_name)
+        LOG.debug("Got msplset")
         if hsplSet is None or msplSet is None:
             return None
         else:
@@ -306,6 +311,10 @@ class CyberTop(pyinotify.ProcessEvent):
             attackType = fields[2]
             LOG.info("Attack stopped (id: %d, severity: %s, type: %s)" % (identifier, severity, attackType))
 
+            # store the anomaly detection name in a variable
+            anomaly_name = attackType
+            LOG.debug("Anomaly name is: " + anomaly_name)
+
             key = "%d-%s-%s" % (identifier, severity, attackType)
             if key not in self.attacks:
                 LOG.warning("Stop message without initial start message")
@@ -318,9 +327,10 @@ class CyberTop(pyinotify.ProcessEvent):
                 events = attackInfo.getEvents()
                 landscapeFileName = self.configParser.get("global", "landscapeFile")
 
+                LOG.debug("Get mspls from list")
                 # First, translate the CSV in HSPL, MSPL sets
-                [hsplSet, msplSet] = self.getMSPLsFromList(identifier, severity, attackType, events, landscapeFileName)
-
+                [hsplSet, msplSet] = self.getMSPLsFromList(identifier, severity, attackType, events, landscapeFileName, anomaly_name)
+                LOG.debug("Got mspls from list")
                 # Then, if extra logging is activated, print HSPL (and/or MSPL)
                 # to an external file
                 if self.configParser.has_option("global", "hsplsFile"):
