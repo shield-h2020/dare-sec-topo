@@ -71,9 +71,23 @@ class MSPLReasoner(object):
         [plugin, identifier] = self.__findLocation(hsplSet, landscape)
         plugin.plugin_object.setup(self.configParser)
 
-        # Creates the IT resource.
+        # Check if VNSFO is integrated to Recommendation engine
+        vnsfo_integration = self.configParser.getboolean("vnsfo",
+                                                         "enable_vnsfo_api_call")
+        if vnsfo_integration:
+            # Creates the IT resource.
+            LOG.info("Experimental: contact vNSFO API")
+            vnsfo_base_url = self.configParser.get("vnsfo", "vnsfo_base_url")
+            if not vnsfo_base_url:
+                LOG.info("VNSFO base URL empty. Fallback to stable.")
+            else:
+                LOG.info("Retrieving VNSF running ID for: " + identifier)
+                vnsfr_id = vnsfo.retrieve_vnsfr_id(vnsfo_base_url,
+                                                     identifier,
+                                                     msplType)
+                LOG.info("VNSF running ID is: " + vnsfr_id)
+                identifier = runtime_id
         itResource = etree.SubElement(msplSet, "{%s}it-resource" % getMSPLNamespace(), {"id" : identifier})
-
         # Calls the plug-in to configure the IT resource.
         plugin.plugin_object.configureITResource(itResource, hsplSet)
 
