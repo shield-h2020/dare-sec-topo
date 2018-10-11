@@ -42,7 +42,7 @@ class MSPLReasoner(object):
         self.configParser = configParser
         self.pluginManager = pluginManager
 
-    def getMSPLs(self, hsplSet, landscape):
+    def getMSPLs(self, hsplSet, landscape, anomaly_name):
         """
         Retrieve the HSPLs that can be used to mitigate an attack.
         @param hsplSet: The HSPL set to use.
@@ -88,7 +88,7 @@ class MSPLReasoner(object):
                 LOG.info("Retrieving VNSF running ID for: " + identifier)
                 vnfr_id = retrieve_vnsfr_id(vnsfo_base_url,
                                             identifier,
-                                            msplType,
+                                            anomaly_name,
                                             vnsfo_timeout)
                 if vnfr_id:
                     LOG.info("VNSF running ID is: " + vnfr_id)
