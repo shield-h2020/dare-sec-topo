@@ -65,7 +65,8 @@ class MSPLReasoner(object):
         # Adds the context.
         context = etree.SubElement(msplSet, "{%s}context" % getMSPLNamespace())
         etree.SubElement(context, "{%s}severity" % getMSPLNamespace()).text = msplSeverity
-        etree.SubElement(context, "{%s}type" % getMSPLNamespace()).text = msplType
+        #etree.SubElement(context, "{%s}type" % getMSPLNamespace()).text = msplType
+        etree.SubElement(context, "{%s}type" % getMSPLNamespace()).text = anomaly_name
         etree.SubElement(context, "{%s}timestamp" % getMSPLNamespace()).text = msplTimestamp
 
         # Finds a plug-in that can create a configured IT resource.
