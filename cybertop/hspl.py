@@ -40,120 +40,114 @@ class HSPLReasoner(object):
         self.configParser = configParser
         self.pluginManager = pluginManager
 
-    def getHSPLs(self, attack, recipe, landscape):
+    def getHSPLs(self, attack, recipes, landscape):
         """
         Retrieve the HSPLs that can be used to mitigate an attack.
         @param attack: The attack to mitigate.
-        @param recipe: The recipe to use.
+        @param recipes: The recipes to use.
         @param landscape: The landscape.
         @return: The XML HSPL set that can mitigate the attack. It is None if no recipe is available.
         @raise SyntaxError: When the generated XML is not valid.
         """
-        if recipe is None:
+        if recipes is None:
             return None
 
         schema = etree.XMLSchema(etree.parse(getHSPLXSDFile()))
-
-        hsplSet = etree.Element("{%s}hspl-set" % getHSPLNamespace(), nsmap = {None : getHSPLNamespace(), "xsi" : getXSINamespace()})
-
-        # Gather some data about the recipe.
-        recipeName = recipe.findtext("{%s}name" % getRecipeNamespace())
-        recipeAction = recipe.findtext("{%s}action" % getRecipeNamespace())
-        recipeSubjectAnyAddress = recipe.findtext("{%s}subject-constraints/{%s}any-address" % (getRecipeNamespace(), getRecipeNamespace()))
-        recipeSubjectAnyPort = recipe.findtext("{%s}subject-constraints/{%s}any-port" % (getRecipeNamespace(), getRecipeNamespace()))
-        recipeObjectAnyAddress = recipe.findtext("{%s}object-constraints/{%s}any-address" % (getRecipeNamespace(), getRecipeNamespace()))
-        recipeObjectAnyPort = recipe.findtext("{%s}object-constraints/{%s}any-port" % (getRecipeNamespace(), getRecipeNamespace()))
-        recipeType = recipe.findtext("{%s}traffic-constraints/{%s}type" % (getRecipeNamespace(), getRecipeNamespace()))
-        recipeMaxConnections = recipe.findtext("{%s}traffic-constraints/{%s}max-connections" % (getRecipeNamespace(), getRecipeNamespace()))
-        recipeRateLimit = recipe.findtext("{%s}traffic-constraints/{%s}rate-limit" % (getRecipeNamespace(), getRecipeNamespace()))
-
-        # Adds the context.
-        context = etree.SubElement(hsplSet, "{%s}context" % getHSPLNamespace())
-        etree.SubElement(context, "{%s}severity" % getHSPLNamespace()).text = str(attack.severity)
-        etree.SubElement(context, "{%s}type" % getHSPLNamespace()).text = attack.type
-        etree.SubElement(context, "{%s}timestamp" % getHSPLNamespace()).text = attack.getTimestamp().isoformat()
-
-        # Filters the events.
-        events = []
-        recipeFilters = recipe.find("{%s}filters" % getRecipeNamespace())
-        evaluation = "or"
-        if recipeFilters is None:
-            events = attack.events
-        else:
-            if "evaluation" in recipeFilters.attrib.keys():
-                evaluation = recipeFilters.attrib["evaluation"]
-            for i in attack.events:
-                if evaluation == "or":
-                    test = False
-                else:
-                    test = True
-                for j in self.pluginManager.getPluginsOfCategory("Filter"):
-                    pluginTag = j.details.get("Core", "Tag")
-                    filterValues = recipeFilters.findall("{%s}%s" % (getRecipeNamespace(), pluginTag))
-                    for k in filterValues:
-                        t = j.plugin_object.filter(k.text, i)
-                        if evaluation == "or":
-                            test = test or t
-                        else:
-                            test = test and t
-                if not test:
-                    events.append(i)
-
-        # Adds an HSPL for each event.
-        count = 0
-        for i in events:
-            count += 1
-            hspl = etree.SubElement(hsplSet, "{%s}hspl" % getHSPLNamespace())
-            etree.SubElement(hspl, "{%s}name" % getHSPLNamespace()).text = "%s #%d" % (recipeName, count)
-            m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", i.target)
-            targetAddress = m.group(1)
-            targetPort = m.group(4)
-            if recipeSubjectAnyAddress is not None:
-                targetAddress = "*"
-            if recipeSubjectAnyPort is not None:
-                targetPort = "*"
-            etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = "%s:%s" % (targetAddress, targetPort)
-            etree.SubElement(hspl, "{%s}action" % getHSPLNamespace()).text = recipeAction
-            m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", i.attacker)
-            attackerAddress = m.group(1)
-            attackerPort = m.group(4)
-            if recipeObjectAnyAddress is not None:
-                attackerAddress = "*"
-            if recipeObjectAnyPort is not None:
-                attackerPort = "*"
-            etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = "%s:%s" % (attackerAddress, attackerPort)
-            trafficConstraints = etree.SubElement(hspl, "{%s}traffic-constraints" % getHSPLNamespace())
-            if recipeType is not None:
-                eventType = recipeType
-            else:
-                eventType = i.fields["protocol"]
-            etree.SubElement(trafficConstraints, "{%s}type" % getHSPLNamespace()).text = eventType
-            if eventType == "TCP" and recipeMaxConnections is not None:
-                etree.SubElement(trafficConstraints, "{%s}max-connections" % getHSPLNamespace()).text = recipeMaxConnections
-            if recipeRateLimit is not None:
-                etree.SubElement(trafficConstraints, "{%s}rate-limit" % getHSPLNamespace()).text = recipeRateLimit
-
-        LOG.debug(etree.tostring(hsplSet, pretty_print = True).decode())
         
-        if schema.validate(hsplSet):
-            hsplSet = self.__cleanAndMerge(hsplSet)
+        recommendations = etree.Element("{%s}recommendations" % getHSPLNamespace(), nsmap = {None : getHSPLNamespace(), "xsi" : getXSINamespace()})
 
-            for i in hsplSet.findall("{%s}hspl" % getHSPLNamespace()):
-                hsplSubject = i.findtext("{%s}subject" % getHSPLNamespace())
-                hsplAction = i.findtext("{%s}action" % getHSPLNamespace())
-                hsplObject = i.findtext("{%s}object" % getHSPLNamespace())
-                hsplType = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
-                LOG.info("HSPL rule (%s, %s(%s), %s) generated." % (hsplSubject, hsplAction, hsplType, hsplObject))
-
-            return hsplSet
+        for recipe in recipes:
+            hsplSet = etree.SubElement(recommendations, "{%s}hspl-set" % getHSPLNamespace(), nsmap = {None : getHSPLNamespace(), "xsi" : getXSINamespace()})
+    
+            # Gather some data about the recipe.
+            recipeName = recipe.findtext("{%s}name" % getRecipeNamespace())
+            recipeAction = recipe.findtext("{%s}action" % getRecipeNamespace())
+            recipeSubjectAnyAddress = recipe.findtext("{%s}subject-constraints/{%s}any-address" % (getRecipeNamespace(), getRecipeNamespace()))
+            recipeSubjectAnyPort = recipe.findtext("{%s}subject-constraints/{%s}any-port" % (getRecipeNamespace(), getRecipeNamespace()))
+            recipeObjectAnyAddress = recipe.findtext("{%s}object-constraints/{%s}any-address" % (getRecipeNamespace(), getRecipeNamespace()))
+            recipeObjectAnyPort = recipe.findtext("{%s}object-constraints/{%s}any-port" % (getRecipeNamespace(), getRecipeNamespace()))
+            recipeType = recipe.findtext("{%s}traffic-constraints/{%s}type" % (getRecipeNamespace(), getRecipeNamespace()))
+            recipeMaxConnections = recipe.findtext("{%s}traffic-constraints/{%s}max-connections" % (getRecipeNamespace(), getRecipeNamespace()))
+            recipeRateLimit = recipe.findtext("{%s}traffic-constraints/{%s}rate-limit" % (getRecipeNamespace(), getRecipeNamespace()))
+     
+            # Adds the context.
+            context = etree.SubElement(hsplSet, "{%s}context" % getHSPLNamespace())
+            etree.SubElement(context, "{%s}severity" % getHSPLNamespace()).text = str(attack.severity)
+            etree.SubElement(context, "{%s}type" % getHSPLNamespace()).text = attack.type
+            etree.SubElement(context, "{%s}timestamp" % getHSPLNamespace()).text = attack.getTimestamp().isoformat()
+     
+            # Filters the events.
+            events = []
+            recipeFilters = recipe.find("{%s}filters" % getRecipeNamespace())
+            evaluation = "or"
+            if recipeFilters is None:
+                events = attack.events
+            else:
+                if "evaluation" in recipeFilters.attrib.keys():
+                    evaluation = recipeFilters.attrib["evaluation"]
+                for i in attack.events:
+                    if evaluation == "or":
+                        test = False
+                    else:
+                        test = True
+                    for j in self.pluginManager.getPluginsOfCategory("Filter"):
+                        pluginTag = j.details.get("Core", "Tag")
+                        filterValues = recipeFilters.findall("{%s}%s" % (getRecipeNamespace(), pluginTag))
+                        for k in filterValues:
+                            t = j.plugin_object.filter(k.text, i)
+                            if evaluation == "or":
+                                test = test or t
+                            else:
+                                test = test and t
+                    if not test:
+                        events.append(i)
+     
+            # Adds an HSPL for each event.
+            count = 0
+            for i in events:
+                count += 1
+                hspl = etree.SubElement(hsplSet, "{%s}hspl" % getHSPLNamespace())
+                etree.SubElement(hspl, "{%s}name" % getHSPLNamespace()).text = "%s #%d" % (recipeName, count)
+                m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", i.target)
+                targetAddress = m.group(1)
+                targetPort = m.group(4)
+                if recipeSubjectAnyAddress is not None:
+                    targetAddress = "*"
+                if recipeSubjectAnyPort is not None:
+                    targetPort = "*"
+                etree.SubElement(hspl, "{%s}subject" % getHSPLNamespace()).text = "%s:%s" % (targetAddress, targetPort)
+                etree.SubElement(hspl, "{%s}action" % getHSPLNamespace()).text = recipeAction
+                m = re.match("(\d+\.\d+\.\d+\.\d+(/\d+)?)(:(\d+|\*|any))?", i.attacker)
+                attackerAddress = m.group(1)
+                attackerPort = m.group(4)
+                if recipeObjectAnyAddress is not None:
+                    attackerAddress = "*"
+                if recipeObjectAnyPort is not None:
+                    attackerPort = "*"
+                etree.SubElement(hspl, "{%s}object" % getHSPLNamespace()).text = "%s:%s" % (attackerAddress, attackerPort)
+                trafficConstraints = etree.SubElement(hspl, "{%s}traffic-constraints" % getHSPLNamespace())
+                if recipeType is not None:
+                    eventType = recipeType
+                else:
+                    eventType = i.fields["protocol"]
+                etree.SubElement(trafficConstraints, "{%s}type" % getHSPLNamespace()).text = eventType
+                if eventType == "TCP" and recipeMaxConnections is not None:
+                    etree.SubElement(trafficConstraints, "{%s}max-connections" % getHSPLNamespace()).text = recipeMaxConnections
+                if recipeRateLimit is not None:
+                    etree.SubElement(trafficConstraints, "{%s}rate-limit" % getHSPLNamespace()).text = recipeRateLimit
+     
+        LOG.debug(etree.tostring(recommendations, pretty_print = True).decode())
+        
+        if schema.validate(recommendations):
+            return self.__cleanAndMerge(recommendations)
         else:
-            LOG.critical("Invalid HSPL set generated.")
-            raise SyntaxError("Invalid HSPL set generated.")
+            LOG.critical("Invalid HSPL recommendations generated.")
+            raise SyntaxError("Invalid HSPL recommendations generated.")
 
-    def __cleanAndMerge(self, hsplSet):
+    def __cleanAndMerge(self, recommendations):
         """
         Polish an HSPL set by removing the duplicate HSPLs and merging them together, if needed. We only work on the objects.
-        @param hsplSet: The HSPL set to use.
+        @param recommendations: The HSPL recommendations set to use.
         @return: The cleaned HSPL set.
         """
         hsplMergeInclusions = int(self.configParser.getboolean("global", "hsplMergeInclusions"))
@@ -161,51 +155,41 @@ class HSPLReasoner(object):
         hsplMergeWithSubnets = int(self.configParser.getboolean("global", "hsplMergeWithSubnets"))
 
         if not hsplMergeInclusions and not hsplMergeWithAnyPorts and not hsplMergeWithSubnets:
-            return hsplSet
+            return recommendations
+        
+        count = 0
+        for hsplSet in recommendations:
+            # Pass 0: create the map.
+            hsplMap = HSPLMap()
+            for i in hsplSet:
+                if i.tag == "{%s}hspl" % getHSPLNamespace():
+                    hsplMap.add(i)
+    
+            # Pass 1: removes the included HSPLs.
+            if hsplMergeInclusions:
+                includedHSPLs = self.__mergeInclusions(hsplSet, hsplMap)
+                if includedHSPLs > 1:
+                    LOG.debug("%d included HSPLs removed for the HSPL set %d.", includedHSPLs, count)
+                else:
+                    LOG.debug("%d included HSPL removed for the HSPL set %d.", includedHSPLs, count)
+    
+            # Pass 2: merges the IP address using * as the port number.
+            if hsplMergeWithAnyPorts:
+                mergedHSPLs = self.__mergeWithAnyPorts(hsplSet, hsplMap)
+                if mergedHSPLs > 1:
+                    LOG.debug("%d HSPLs merged using any ports for the HSPL set %d.", mergedHSPLs, count)
+                else:
+                    LOG.debug("%d HSPL merged using any port for the HSPL set %d.", mergedHSPLs, count)
+    
+            # Pass 3: merges the HSPLs, if needed.
+            if hsplMergeWithSubnets:
+                mergedHSPLs = self.__mergeWithSubnets(hsplSet, hsplMap)
+                if mergedHSPLs > 1:
+                    LOG.debug("%d HSPLs merged using subnets for the HSPL set %d.", mergedHSPLs, count)
+                else:
+                    LOG.debug("%d HSPL merged using subnets for the HSPL set %d.", mergedHSPLs, count)
 
-        hsplCount = len(hsplSet.getchildren()) - 1
-        if hsplCount == 1:
-            LOG.info("%d initial HSPL generated.", hsplCount)
-        else:
-            LOG.info("%d initial HSPLs generated.", hsplCount)
-
-        # Pass 0: create the map.
-        hsplMap = HSPLMap()
-        for i in hsplSet:
-            if i.tag == "{%s}hspl" % getHSPLNamespace():
-                hsplMap.add(i)
-
-        # Pass 1: removes the included HSPLs.
-        if hsplMergeInclusions:
-            includedHSPLs = self.__mergeInclusions(hsplSet, hsplMap)
-            if includedHSPLs > 1:
-                LOG.debug("%d included HSPLs removed.", includedHSPLs)
-            else:
-                LOG.debug("%d included HSPL removed.", includedHSPLs)
-
-        # Pass 2: merges the IP address using * as the port number.
-        if hsplMergeWithAnyPorts:
-            mergedHSPLs = self.__mergeWithAnyPorts(hsplSet, hsplMap)
-            if mergedHSPLs > 1:
-                LOG.debug("%d HSPLs merged using any ports.", mergedHSPLs)
-            else:
-                LOG.debug("%d HSPL merged using any port.", mergedHSPLs)
-
-        # Pass 3: merges the HSPLs, if needed.
-        if hsplMergeWithSubnets:
-            mergedHSPLs = self.__mergeWithSubnets(hsplSet, hsplMap)
-            if mergedHSPLs > 1:
-                LOG.debug("%d HSPLs merged using subnets.", mergedHSPLs)
-            else:
-                LOG.debug("%d HSPL merged using subnets.", mergedHSPLs)
-
-        hsplCount = len(hsplSet.getchildren()) - 1
-        if hsplCount == 1:
-            LOG.info("%d HSPL remaining.", hsplCount)
-        else:
-            LOG.info("%d HSPLs remaining.", hsplCount)
-
-        return hsplSet
+        return recommendations
 
     def __checkIncludedHSPLs(self, hspl1, hspl2):
         """

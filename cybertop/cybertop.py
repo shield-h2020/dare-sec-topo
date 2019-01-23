@@ -143,8 +143,8 @@ class CyberTop(pyinotify.ProcessEvent):
         """
         attack = self.parser.getAttackFromFile(attackFileName)
         landscape = self.parser.getLandscape(landscapeFileName)
-        recipe = self.recipesReasoner.getRecipe(attack, landscape)
-        hsplSet = self.hsplReasoner.getHSPLs(attack, recipe, landscape)
+        recipes = self.recipesReasoner.getRecipes(attack, landscape)
+        hsplSet = self.hsplReasoner.getHSPLs(attack, recipes, landscape)
         msplSet = self.msplReasoner.getMSPLs(hsplSet, landscape,
                                              attack.anomaly_name)
 
@@ -172,12 +172,12 @@ class CyberTop(pyinotify.ProcessEvent):
         LOG.debug("Got attack from list")
         landscape = self.parser.getLandscape(landscapeFileName)
         LOG.debug("Got landscape")
-        recipe = self.recipesReasoner.getRecipe(attack, landscape)
-        LOG.debug("Got recipe")
-        hsplSet = self.hsplReasoner.getHSPLs(attack, recipe, landscape)
-        LOG.debug("Got hsplset")
+        recipes = self.recipesReasoner.getRecipes(attack, landscape)
+        LOG.debug("Got recipes")
+        hsplSet = self.hsplReasoner.getHSPLs(attack, recipes, landscape)
+        LOG.debug("Got HSPL set")
         msplSet = self.msplReasoner.getMSPLs(hsplSet, landscape, anomaly_name)
-        LOG.debug("Got msplset")
+        LOG.debug("Got MSPL set")
         if hsplSet is None or msplSet is None:
             return None
         else:
@@ -359,7 +359,7 @@ class CyberTop(pyinotify.ProcessEvent):
         else:
             LOG.warning("Unknown message format: " + line)
 
-        channel.basic_ack(delivery_tag=method.delivery_tag)
+        channel.basic_ack(delivery_tag = method.delivery_tag)
 
     def listenRabbitMQ(self):
         """
@@ -380,7 +380,7 @@ class CyberTop(pyinotify.ProcessEvent):
         self.open_channel()
 
     def on_connection_closed(self, connection, reply_code, reply_text):
-        LOG.debug("Detected a closed connection...reconnect in some time")
+        LOG.debug("Detected a closed connection... Reconnecting in a while...")
         self.r_channel = None
         if not self.r_closingConnection:
             self.r_connection.add_timeout(5, self.reconnect)
