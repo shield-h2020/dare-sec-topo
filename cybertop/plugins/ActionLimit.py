@@ -33,7 +33,7 @@ class ActionLimit(ActionPlugin):
     
     def configureITResource(self, itResource, hsplSet):
         """
-        Configures an IT resource.
+        Configures an IT resource.wi        
         @param itResource: The IT resource to configure.
         @param hsplSet: The HSPL to refine into MSPLs.
         """
@@ -43,12 +43,9 @@ class ActionLimit(ActionPlugin):
             protocol = i.findtext("{%s}traffic-constraints/{%s}type" % (getHSPLNamespace(), getHSPLNamespace()))
             protocols.add(protocol)    
         
-        maxConnections = self.configParser.get("limit", "maxConnections", fallback = self.MAX_CONNECTIONS)
-        configuration = self.createFilteringConfiguration(itResource, "drop", "FMR")
-        if "TCP" in protocols:
-            self.createFilteringRule(configuration, 1, "reject", direction = "inbound", protocol = "TCP", maxConnections = maxConnections)
+        configuration = self.createFilteringConfiguration(itResource, "accept", "FMR")
 
-        count = 1
+        count = 0
         for i in hsplSet:
             if i.tag == "{%s}hspl" % getHSPLNamespace():
                 subjectParts = i.findtext("{%s}subject" % getHSPLNamespace()).split(":")
@@ -59,23 +56,40 @@ class ActionLimit(ActionPlugin):
                     maxConnections = self.configParser.get("limit", "maxConnections", fallback = self.MAX_CONNECTIONS)
                 rateLimit = i.findtext("{%s}traffic-constraints/{%s}rate-limit" % (getHSPLNamespace(), getHSPLNamespace()))
                 if rateLimit is None:
-                    rateLimit = self.configParser.get("limit", "rateLimit", fallback = self.RATE_LIMIT)
+                    rateLimit = self.configParser.get("limit", "maxConnections", fallback = self.RATE_LIMIT)
+                    
                 if protocol == "TCP+UDP":
                     count += 1
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
                         sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
                         protocol = "TCP", maxConnections = maxConnections, rateLimit = rateLimit)
                     count += 1
+                    self.createFilteringRule(configuration, count, "reject", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = "TCP")
+                    count += 1
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
                         sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
                         protocol = "UDP", rateLimit = rateLimit)
+                    count += 1
+                    self.createFilteringRule(configuration, count, "reject", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = "UDP")
                 elif protocol == "TCP":
                     count += 1
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
                         sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
                         protocol = protocol, maxConnections = maxConnections, rateLimit = rateLimit)
+                    count += 1
+                    self.createFilteringRule(configuration, count, "reject", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = protocol)
                 else:
                     count += 1
                     self.createFilteringRule(configuration, count, "accept", direction = "inbound", sourceAddress = objectParts[0],
                         sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
                         protocol = protocol, rateLimit = rateLimit)
+                    count += 1
+                    self.createFilteringRule(configuration, count, "reject", direction = "inbound", sourceAddress = objectParts[0],
+                        sourcePort = objectParts[1], destinationAddress = subjectParts[0], destinationPort = subjectParts[1],
+                        protocol = protocol)
