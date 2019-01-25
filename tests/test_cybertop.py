@@ -296,14 +296,16 @@ class TestWorm(BasicTest):
         """
         Tests the worm, very high severity.
         """
-        self._doHSPLTest("Very High-wannacry-1.csv", "landscape1.xml", 1, ["TCP"] * 6 + ["UDP"] * 12, ["drop"] * 18, ["*:*"] * 18, ["*"] * 18)
+        self._doHSPLTest("Very High-wannacry-1.csv", "landscape1.xml", 2, ["TCP"] * 6 + ["UDP"] * 12, ["drop"] * 18, ["*:*"] * 18, ["*"] * 18)
+        self._doHSPLTest("Very High-wannacry-1.csv", "landscape1.xml", 2, ["TCP"] * 6 + ["UDP"] * 12, ["limit"] * 18, ["*:*"] * 18, ["*"] * 18)
         self._doHSPLTest("Very High-wannacry-1.csv", "landscape2.xml", 1, ["TCP"] * 6 + ["UDP"] * 12, ["drop"] * 18, ["*:*"] * 18, ["*"] * 18)
         
     def test_highWorm(self):
         """
         Tests the worm, high severity.
         """
-        self._doHSPLTest("High-Worm-1.csv", "landscape1.xml", 1, ["TCP"] * 2, ["drop"] * 2, ["*:*"] * 2, ["*"] * 2)
+        self._doHSPLTest("High-Worm-1.csv", "landscape1.xml", 2, ["TCP"] * 2, ["drop"] * 2, ["*:*"] * 2, ["*"] * 2)
+        self._doHSPLTest("High-Worm-1.csv", "landscape1.xml", 2, ["TCP"] * 2, ["limit"] * 2, ["*:*"] * 2, ["*"] * 2)
         self._doHSPLTest("High-Worm-1.csv", "landscape2.xml", 1, ["TCP"] * 2, ["drop"] * 2, ["*:*"] * 2, ["*"] * 2)
 
 class TestHSPLMerging(BasicTest):
