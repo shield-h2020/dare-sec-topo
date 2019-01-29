@@ -17,13 +17,31 @@ limitations under the License.
 <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://security.polito.it/shield/hspl" xmlns:tns="http://security.polito.it/shield/hspl"
 	elementFormDefault="qualified">
 
-	<element name="hspl-set" type="tns:hspl-set">
+	<element name="recommendations" type="tns:recommendations">
 		<annotation>
-			<documentation>The root element. A recipe, that is a set of template HSPL policies.</documentation>
+			<documentation>The root element. A set of suggested HSPL sets.</documentation>
 		</annotation>
 	</element>
 
+	<element name="hspl-set" type="tns:hspl-set">
+		<annotation>
+			<documentation>The root element. A set of HSPL rules forming a remediation.</documentation>
+		</annotation>
+	</element>
+
+	<complexType name="recommendations">
+		<annotation>
+			<documentation>The root element. A set of suggested HSPL sets.</documentation>
+		</annotation>
+		<sequence>
+			<element name="hspl-set" type="tns:hspl-set" maxOccurs="unbounded" minOccurs="1"/>
+		</sequence>
+	</complexType>
+
 	<complexType name="hspl-set">
+		<annotation>
+			<documentation>A set of HSPL rules forming a remediation.</documentation>
+		</annotation>
 		<sequence>
 			<element name="context" type="tns:context" />
 			<element name="hspl" type="tns:hspl" maxOccurs="unbounded" minOccurs="1"/>
@@ -165,7 +183,7 @@ limitations under the License.
 				</annotation>
 				<simpleType>
 					<restriction base="string">
-						<pattern value="\d+(bit|kbit|mbit)?/(second|minute|hour|day|s|m|h|d)" />
+						<pattern value="\d+/(second|minute|hour|day|s|m|h|d)" />
 					</restriction>
 				</simpleType>
 			</element>

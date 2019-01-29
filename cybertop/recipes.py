@@ -142,34 +142,9 @@ class RecipesReasoner(object):
             LOG.debug("Removed %d too strict recipes, %d remaining.", tooStrict, len(validRecipes))
         return validRecipes
 
-    def __getBestRecipe(self, recipes, landscape):
+    def getRecipes(self, attack, landscape):
         """
-        Gets the best recipe.
-        @param recipes: The recipes to search for.
-        @param landscape: The landscape.
-        @return: The best recipe. It is None if the recipes list is empty.
-        """
-        recipe = None
-        score = None
-        # Picks the recipe with the highest score.
-        for i in recipes:
-            recipeAction = i.findtext("{%s}action" % getRecipeNamespace())
-            for j in self.pluginManager.getPluginsOfCategory("Action"):
-                pluginAction = j.details.get("Core", "Action")
-                pluginScore = j.details.get("Core", "Score")
-                pluginCapabilities = set(re.split("\s*,\s*", j.details.get("Core", "Capabilities")))
-                if recipeAction == pluginAction:
-                    for capabilities in landscape.values():
-                        if pluginCapabilities.issubset(capabilities):
-                            if score is None or pluginScore > score:
-                                score = pluginScore
-                                recipe = i
-            
-        return recipe
-
-    def getRecipe(self, attack, landscape):
-        """
-        Retrieve the best recipe that can be used to mitigate an attack.
+        Retrieves all the recipe that can be used to mitigate an attack.
         @param attack: The attack to mitigate.
         @param landscape: The landscape.
         @return: The recipes that can mitigate the attack. It is None if no recipe is available.
@@ -178,10 +153,9 @@ class RecipesReasoner(object):
         recipes = self.__getRecipes(attack)
         recipes = self.__filterNonEnforceableRecipes(recipes, landscape)
         recipes = self.__filterTooStrictRecipes(recipes, attack)
-        recipe = self.__getBestRecipe(recipes, landscape)
-        if recipe is None:
+
+        if recipes is None:
             return None
         else:
-            recipeName = recipe.findtext("{%s}name" % getRecipeNamespace())
-            LOG.info("Recipe '%s' chosen.", recipeName)
-            return recipe
+            LOG.info("%d recipes chosen.", len(recipes))
+            return recipes

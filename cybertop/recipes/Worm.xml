@@ -4,6 +4,22 @@
 	xsi:schemaLocation="http://security.polito.it/shield/recipe ../xsd/recipe.xsd ">
 
 	<recipe>
+		<name>limit packets</name>
+		<action>limit</action>
+ 		<subject-constraints>
+ 			<any-address>true</any-address>
+			<any-port>true</any-port>
+		</subject-constraints>
+		<object-constraints>
+			<any-port>true</any-port>
+		</object-constraints>
+		<traffic-constraints>
+			<max-connections>3</max-connections>
+			<rate-limit>10/s</rate-limit>
+		</traffic-constraints>
+	</recipe>
+
+	<recipe>
 		<name>drop packets</name>
 		<action>drop</action>
  		<subject-constraints>
