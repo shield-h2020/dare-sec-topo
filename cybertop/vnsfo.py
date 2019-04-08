@@ -18,7 +18,7 @@ from cybertop.log import LOG
 def retrieve_vnsfr_id(vnsfo_base_url, vnfd_id, attack_name, timeout):
     LOG.info("Request vNSFO API call for vnsfd_id=" + vnfd_id +
              " and attack type=" + attack_name)
-    url = vnsfo_base_url + "/vnsf/running"
+    url = vnsfo_base_url + "/vnsf/r4/running"
     LOG.info("VNSFO API call: " + url)
 
     try:
@@ -28,12 +28,11 @@ def retrieve_vnsfr_id(vnsfo_base_url, vnfd_id, attack_name, timeout):
 
         # search for first running instance which matches the query
         for vnsf in vnsfs:
-            if vnsf['vnfd_id'] == vnfd_id:
-                LOG.info("Found running vNSF with matching vnfd_id")
-                if attack_name.lower() in vnsf['ns_name'].lower():
-                    LOG.info("Found instance=" + vnsf['vnfr_id'] +
-                             " for attack=" + attack_name)
-                    return vnsf['vnfr_id']
+            target_vnf = vnsf['vnfd_id'][:-5].lower()
+            if vnfd_id[:-5].lower() in target_vnf and attack_name.lower() in target_vnf:
+                LOG.info("Found instance=" + vnsf['vnfr_id'] +
+                         " for attack=" + attack_name)
+                return vnsf['vnfr_id']
         LOG.info("No running instance found from VNSFO API.")
         return None
     except Exception as e:
